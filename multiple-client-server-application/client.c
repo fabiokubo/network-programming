@@ -12,14 +12,37 @@
 
 #define MAXLINE 4096
 
-int main(int argc, char **argv) {
-   int    sockfd, n, length_current;
-   char   recvline[MAXLINE + 1];
-   char   error[MAXLINE + 1];
-   struct sockaddr_in servaddr, current_address;
+int    sockfd, n, length_current;
+char   recvline[MAXLINE + 1];
+char   error[MAXLINE + 1];
+struct sockaddr_in servaddr, current_address;
 
-   int len=20;
-   char * buffer = (char *) malloc(sizeof(char) * len);
+int len=20;
+char * buffer = (char *) malloc(sizeof(char) * len);
+
+
+
+void read_from_terminal() {
+
+}
+
+void read_from_server() {
+
+  while ( (n = read(sockfd, recvline, MAXLINE)) > 0) {
+     recvline[n] = 0;
+     if (fputs(recvline, stdout) == EOF) {
+        perror("fputs error");
+        exit(1);
+     }
+  }
+
+  if (n < 0) {
+     perror("read error");
+     exit(1);
+  }
+}
+
+int main(int argc, char **argv) {
 
    if (argc != 2) {
       strcpy(error,"uso: ");
@@ -37,7 +60,7 @@ int main(int argc, char **argv) {
    bzero(&servaddr, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
    servaddr.sin_port   = htons(6000);
-   
+
    if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
       perror("inet_pton error");
       exit(1);
@@ -48,7 +71,7 @@ int main(int argc, char **argv) {
       exit(1);
    }
 
-    bzero(&current_address, sizeof(current_address));
+  bzero(&current_address, sizeof(current_address));
 
 	length_current = sizeof(current_address);
 	getsockname(sockfd, (struct sockaddr *) &current_address, (socklen_t * ) &length_current);
@@ -59,18 +82,10 @@ int main(int argc, char **argv) {
 	printf("IP: %s\n", buffer);
 	printf("Port: %d\n", htons(current_address.sin_port));
 
-   while ( (n = read(sockfd, recvline, MAXLINE)) > 0) {
-      recvline[n] = 0;
-      if (fputs(recvline, stdout) == EOF) {
-         perror("fputs error");
-         exit(1);
-      }
-   }
+  while(1) {
+    read_from_server();
+  }
 
-   if (n < 0) {
-      perror("read error");
-      exit(1);
-   }
 
    exit(0);
 }
