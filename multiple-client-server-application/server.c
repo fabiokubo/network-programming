@@ -15,6 +15,10 @@
 #define LISTENQ 10
 #define MAXDATASIZE 100
 
+void process_request() {
+
+}
+
 int main (int argc, char **argv) {
    int    listenfd, connfd, peerinfo;
    struct sockaddr_in servaddr;
@@ -22,6 +26,7 @@ int main (int argc, char **argv) {
    time_t ticks;
    struct sockaddr_in peer;
    int peer_len;
+   pid_t pid;
 
    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
       perror("socket");
@@ -37,12 +42,11 @@ int main (int argc, char **argv) {
       perror("bind");
       exit(1);
    }
-   
+
    if (listen(listenfd, LISTENQ) == -1) {
       perror("listen");
       exit(1);
    }
-
 
    for ( ; ; ) {
       if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1 ) {
@@ -50,17 +54,21 @@ int main (int argc, char **argv) {
          exit(1);
       }
 
-      ticks = time(NULL);
-      snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
-      write(connfd, buf, strlen(buf));
+      //fork process
+      pid = fork();
 
-      peer_len = sizeof(peer);
-      if (getpeername(connfd, (struct sockaddr *)&peer, &peer_len) == -1) {
-          perror("getpeername() failed");
-          return -1;
+      //if is child
+      if(pid == 0) {
+         close(listenfd);
+         process_request();
+
+         ticks = time(NULL);
+         snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
+         write(connfd, buf, strlen(buf));
+
+         close(connfd);
+         exit(0);
       }
-      printf("Peer's IP address is: %s\n", inet_ntoa(peer.sin_addr));
-      printf("Peer's port is: %d\n", (int) ntohs(peer.sin_port));
 
       close(connfd);
    }
