@@ -10,82 +10,86 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define MAXLINE 4096
+#define PORTNUMBER 6000
 
-int    sockfd, n, length_current;
-char   recvline[MAXLINE + 1];
-char   error[MAXLINE + 1];
-struct sockaddr_in servaddr, current_address;
-
-int len=20;
-char * buffer = (char *) malloc(sizeof(char) * len);
-
-
-
-void read_from_terminal() {
-
+void validate_args(int argc, char **argv){
+    if (argc != 2) {
+        printf("Error: ./program <IPAddress> \n");
+        exit(EXIT_FAILURE);
+    }
 }
 
-void read_from_server() {
-
-  while ( (n = read(sockfd, recvline, MAXLINE)) > 0) {
-     recvline[n] = 0;
-     if (fputs(recvline, stdout) == EOF) {
-        perror("fputs error");
-        exit(1);
-     }
-  }
-
-  if (n < 0) {
-     perror("read error");
-     exit(1);
-  }
+int create_new_socket(){
+    //Creates a new socket
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+       printf("Failed to create new socket.");
+       exit(EXIT_FAILURE);
+    }
+    return sockfd;
 }
 
-int main(int argc, char **argv) {
+void init_server_address(char * server_ip, struct sockaddr_in * server_address){
 
-   if (argc != 2) {
-      strcpy(error,"uso: ");
-      strcat(error,argv[0]);
-      strcat(error," <IPaddress>");
-      perror(error);
-      exit(1);
-   }
+    //Initialize server_address, a struct containing server address informations
+    bzero(server_address, sizeof(*server_address));
+    //Set config values for server_address
+    server_address->sin_family = AF_INET;
+    server_address->sin_port   = htons(PORTNUMBER);
 
-   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-      perror("socket error");
-      exit(1);
-   }
+    //Converts server address IP from string to binary and saves in server_address
+    if (inet_pton(AF_INET, server_ip, &(server_address->sin_addr) ) <= 0) {
+        printf("Error to convert server ip from text to binary.\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
-   bzero(&servaddr, sizeof(servaddr));
-   servaddr.sin_family = AF_INET;
-   servaddr.sin_port   = htons(6000);
+void start_connection(int sockfd, struct sockaddr *servaddr){
+    //Start connection with server using sockfd socket
+    if (connect(sockfd,  servaddr, sizeof(*servaddr)) < 0) {
+       printf("Error connecting with server.\n");
+       exit(EXIT_FAILURE);
+    }
+}
 
-   if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
-      perror("inet_pton error");
-      exit(1);
-   }
+void send_command_to_server(int sockfd){
+    char message_to_server[100];
+    /*Write on screen*/
+    write(1,"\nType your command : ",21);
 
-   if (connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-      perror("connect error");
-      exit(1);
-   }
+    /*Read at most 100 chars from console into 'str' */
+    read(0, message_to_server, 100);
 
-  bzero(&current_address, sizeof(current_address));
+    /*newline*/
+    write(1,"\n",1);
 
-	length_current = sizeof(current_address);
-	getsockname(sockfd, (struct sockaddr *) &current_address, (socklen_t * ) &length_current);
-
-	inet_ntop(AF_INET, &(current_address.sin_addr), buffer, len);
-
-	printf("getsockname output:\n");
-	printf("IP: %s\n", buffer);
-	printf("Port: %d\n", htons(current_address.sin_port));
-
-  while(1) {
-    read_from_server();
-  }
+    //send to server
+    write(sockfd, message_to_server, strlen(message_to_server) + 1);
+}
 
 
-   exit(0);
+void write_output_from_server(int sockfd) {
+  char message_from_server[100];
+
+  read(sockfd, message_from_server, 100);
+  write(1, message_from_server, strlen(message_from_server) + 1);
+}
+
+int main(int argc, char **argv){
+    int sockfd;
+    struct sockaddr_in server_address;
+
+    validate_args(argc, argv);
+    sockfd = create_new_socket();
+    init_server_address(argv[1], &server_address);
+    start_connection(sockfd, (struct sockaddr *) &server_address);
+
+    //forever
+    for(;;){
+        //TODO: fork process
+        send_command_to_server(sockfd);
+        write_output_from_server(sockfd);
+    }
+
+    return 0;
 }

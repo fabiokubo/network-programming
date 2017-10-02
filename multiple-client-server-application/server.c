@@ -11,67 +11,77 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
+#define PORTNUMBER 6000
+#define MAX_PENDING_CONNECTION_QUEUE 10
 
-#define LISTENQ 10
-#define MAXDATASIZE 100
 
-void process_request() {
+int create_new_socket(){
+  int listenfd = socket(AF_INET, SOCK_STREAM, 0);
 
+  if ( listenfd < 0) {
+     printf("Error in method create_new_socket.");
+     exit(EXIT_FAILURE);
+  }
+
+  return listenfd;
 }
 
-int main (int argc, char **argv) {
-   int    listenfd, connfd, peerinfo;
-   struct sockaddr_in servaddr;
-   char   buf[MAXDATASIZE];
-   time_t ticks;
-   struct sockaddr_in peer;
-   int peer_len;
-   pid_t pid;
+void initialize_server_address(struct sockaddr_in * server_address){
+  bzero(server_address, sizeof(* server_address));
+  server_address->sin_family      = AF_INET;
+  server_address->sin_addr.s_addr = htonl(INADDR_ANY);
+  server_address->sin_port        = htons(PORTNUMBER);
+}
 
-   if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-      perror("socket");
-      exit(1);
-   }
+void bind_name_to_socket(struct sockaddr * servaddr, int listenfd){
+  int bind_result = bind(listenfd, servaddr, sizeof(* servaddr));
 
-   bzero(&servaddr, sizeof(servaddr));
-   servaddr.sin_family      = AF_INET;
-   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-   servaddr.sin_port        = htons(6000);
+  if (bind_result < 0) {
+     printf("Error in method bind_name_to_socket.");
+     exit(EXIT_FAILURE);
+  }
+}
 
-   if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1) {
-      perror("bind");
-      exit(1);
-   }
+void listen_for_connections(int listenfd){
+  int listen_result = listen(listenfd, MAX_PENDING_CONNECTION_QUEUE);
+  if ( listen_result < 0) {
+     printf("Error in method listen_for_connections");
+     exit(EXIT_FAILURE);
+  }
+}
 
-   if (listen(listenfd, LISTENQ) == -1) {
-      perror("listen");
-      exit(1);
-   }
+int main(){
+  int listenfd, connfd;
+  struct sockaddr_in server_address;
+  pid_t process_id;
 
-   for ( ; ; ) {
-      if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1 ) {
-         perror("accept");
-         exit(1);
-      }
+  listenfd = create_new_socket();
+  initialize_server_address(&server_address);
+  bind_name_to_socket((struct sockaddr *) &server_address, listenfd);
+  listen_for_connections(listenfd);
 
-      //fork process
-      pid = fork();
+  while(1){
+    if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1 ) {
+       perror("accept");
+       exit(1);
+    }
 
-      //if is child
-      if(pid == 0) {
-         close(listenfd);
-         process_request();
+    //fork process
+    process_id = fork();
 
-         ticks = time(NULL);
-         snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
-         write(connfd, buf, strlen(buf));
+    //if is child
+    if(process_id == 0) {
+       close(listenfd);
+       //process_request();
 
-         close(connfd);
-         exit(0);
-      }
+       write(connfd, "teste", 6);
 
-      close(connfd);
-   }
+       close(connfd);
+       exit(0);
+    }
 
-   return(0);
+    close(connfd);
+  }
+
+  return 0;
 }
