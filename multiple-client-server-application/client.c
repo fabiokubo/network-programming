@@ -53,26 +53,21 @@ void start_connection(int sockfd, struct sockaddr *servaddr){
 }
 
 void send_command_to_server(int sockfd){
-    char message_to_server[100];
-    /*Write on screen*/
-    write(1,"\nType your command : ",21);
+    char message_to_server[300];
 
     /*Read at most 100 chars from console into 'str' */
-    read(0, message_to_server, 100);
-
-    /*newline*/
-    write(1,"\n",1);
+    read(0, message_to_server, 300);
 
     //send to server
     write(sockfd, message_to_server, strlen(message_to_server) + 1);
 }
 
+void print_from_server(int sockfd) {
+  char message_from_server[300];
 
-void write_output_from_server(int sockfd) {
-  char message_from_server[100];
+  read(sockfd, message_from_server, 300);
 
-  read(sockfd, message_from_server, 100);
-  write(1, message_from_server, strlen(message_from_server) + 1);
+  printf("%s\n", message_from_server);
 }
 
 int main(int argc, char **argv){
@@ -86,9 +81,11 @@ int main(int argc, char **argv){
 
     //forever
     for(;;){
-        //TODO: fork process
+        print_from_server(sockfd);
         send_command_to_server(sockfd);
-        write_output_from_server(sockfd);
+        print_from_server(sockfd);
+
+        exit(EXIT_FAILURE);
     }
 
     return 0;
