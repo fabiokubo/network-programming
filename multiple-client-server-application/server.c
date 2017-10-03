@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-#define PORTNUMBER 6500
+#define MAXMESSAGE 300
 #define MAX_PENDING_CONNECTION_QUEUE 10
 
 void validate_args(int argc, char **argv){
@@ -81,12 +81,12 @@ void ask_for_command(int connfd){
 }
 
 void read_execute_command(int connfd){
-  char message_from_client[300], formated_message_server[1024];
+  char message_from_client[MAXMESSAGE], formated_message_server[1024];
 
-  bzero( message_from_client, 300);
+  bzero( message_from_client, MAXMESSAGE);
   bzero( formated_message_server, 1024);
 
-  if(read(connfd, message_from_client, 300) > 0) {
+  if(read(connfd, message_from_client, MAXMESSAGE) > 0) {
     //write in server
     strcpy(formated_message_server, "Command received: ");
     strcat(formated_message_server, message_from_client);
