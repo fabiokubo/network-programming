@@ -57,12 +57,20 @@ void listen_for_connections(int sockfd){
 }
 
 int accept_connection(int sockfd){
-  int connfd = accept(sockfd, (struct sockaddr *) NULL, NULL);
+  socklen_t length;
+  struct sockaddr_in peer_address;
+  char str[INET_ADDRSTRLEN];
+
+  length = sizeof(peer_address);
+  int connfd = accept(sockfd, (struct sockaddr *) &peer_address, &length);
 
   if(connfd < 0){
     printf("Erro to accept connection.\n");
     exit(EXIT_FAILURE);
   }
+
+  inet_ntop(AF_INET, &(peer_address.sin_addr), str, INET_ADDRSTRLEN);
+  printf("New connection - IP: %s PortNumber:%d\n", str, ntohs(peer_address.sin_port));
 
   return connfd;
 }
@@ -72,7 +80,7 @@ void ask_for_command(int connfd){
   write(connfd, message_to_client, strlen(message_to_client) + 1);
 }
 
-void read_command(int connfd){
+void read_execute_command(int connfd){
   char message_from_client[300], formated_message_server[1024]
   , formated_message_client[1024];
 
@@ -91,17 +99,19 @@ void read_command(int connfd){
   strcpy(formated_message_client, "Server received: ");
   strcat(formated_message_client, message_from_client);
   write(connfd, formated_message_client, strlen(formated_message_client) + 1);
+
+  system(message_from_client);
 }
 
 void handle_client(int connfd){
 
     ask_for_command(connfd);
-    read_command(connfd);
+    read_execute_command(connfd);
     close(connfd);
 }
 
 int main(int argc, char **argv){
-  int sockfd, connfd, n_connections;
+  int sockfd, connfd;
   struct sockaddr_in server_address;
   pid_t process_id;
 
@@ -114,14 +124,9 @@ int main(int argc, char **argv){
   listen_for_connections(sockfd);
 
   printf("Waiting for connections...\n");
-  n_connections = 0;
 
   for(;;){
     connfd = accept_connection(sockfd);
-
-    //increment the quantity of connected clients
-    n_connections++;
-    printf("Client %d connected\n", n_connections);
 
     process_id = fork();
     //if is child
