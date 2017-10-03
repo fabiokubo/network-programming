@@ -11,9 +11,15 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-#define PORTNUMBER 3000
+#define PORTNUMBER 6500
 #define MAX_PENDING_CONNECTION_QUEUE 10
 
+void validate_args(int argc, char **argv){
+    if (argc != 2) {
+        printf("Error: ./program <PortNumber>\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 int create_new_socket(){
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -26,11 +32,11 @@ int create_new_socket(){
   return sockfd;
 }
 
-void initialize_server_address(struct sockaddr_in * server_address){
+void initialize_server_address(struct sockaddr_in * server_address, int portNumber){
   bzero(server_address, sizeof(* server_address));
   server_address->sin_family      = AF_INET;
   server_address->sin_addr.s_addr = htonl(INADDR_ANY);
-  server_address->sin_port        = htons(PORTNUMBER);
+  server_address->sin_port        = htons(portNumber);
 }
 
 void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
@@ -62,7 +68,7 @@ int accept_connection(int sockfd){
 }
 
 void ask_for_command(int connfd){
-  char message_to_client[300] = "Enter a command: ";
+  char message_to_client[] = "Enter a command: ";
   write(connfd, message_to_client, strlen(message_to_client) + 1);
 }
 
@@ -70,57 +76,58 @@ void read_command(int connfd){
   char message_from_client[300], formated_message_server[1024]
   , formated_message_client[1024];
 
+  bzero( message_from_client, 300);
+  bzero( formated_message_server, 1024);
+  bzero( formated_message_client, 1024);
+
   read(connfd, message_from_client, 300);
 
+  //write in server
   strcpy(formated_message_server, "Command received: ");
   strcat(formated_message_server, message_from_client);
-  strcat(formated_message_server, "\n");
-
-  //write in server
-  printf("%s\n", formated_message_server);
-  
-  strcpy(formated_message_client, "Server received: ");
-  strcat(formated_message_client, message_from_client);
-  strcat(formated_message_client, "\n");
+  printf("%s", formated_message_server);
 
   //write in client
+  strcpy(formated_message_client, "Server received: ");
+  strcat(formated_message_client, message_from_client);
   write(connfd, formated_message_client, strlen(formated_message_client) + 1);
 }
 
-int main(){
+void handle_client(int connfd){
+
+    ask_for_command(connfd);
+    read_command(connfd);
+    close(connfd);
+}
+
+int main(int argc, char **argv){
   int sockfd, connfd, n_connections;
   struct sockaddr_in server_address;
   pid_t process_id;
 
   printf("Starting server...\n");
 
+  validate_args(argc, argv);
   sockfd = create_new_socket();
-  initialize_server_address(&server_address);
+  initialize_server_address(&server_address, atoi(argv[1]));
   bind_name_to_socket((struct sockaddr *) &server_address, sockfd);
   listen_for_connections(sockfd);
 
   printf("Waiting for connections...\n");
   n_connections = 0;
 
-  while(1){
+  for(;;){
     connfd = accept_connection(sockfd);
 
     //increment the quantity of connected clients
     n_connections++;
     printf("Client %d connected\n", n_connections);
 
-    //fork process
     process_id = fork();
-
     //if is child
     if(process_id == 0) {
        close(sockfd);
-       ask_for_command(connfd);
-       read_command(connfd);
-       //execute_command();
-       //send_output();
-
-       close(connfd);
+       handle_client(connfd);
        exit(0);
     }
 

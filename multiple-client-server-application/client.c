@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define PORTNUMBER 6000
+#define MAXMESSAGE 300
 
 void validate_args(int argc, char **argv){
-    if (argc != 2) {
-        printf("Error: ./program <IPAddress> \n");
+    if (argc != 3) {
+        printf("Error: ./program <IPAddress> <PortNumber>\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -29,13 +29,13 @@ int create_new_socket(){
     return sockfd;
 }
 
-void init_server_address(char * server_ip, struct sockaddr_in * server_address){
+void init_server_address(char * server_ip, struct sockaddr_in * server_address, int portNumber){
 
     //Initialize server_address, a struct containing server address informations
     bzero(server_address, sizeof(*server_address));
     //Set config values for server_address
     server_address->sin_family = AF_INET;
-    server_address->sin_port   = htons(PORTNUMBER);
+    server_address->sin_port   = htons(portNumber);
 
     //Converts server address IP from string to binary and saves in server_address
     if (inet_pton(AF_INET, server_ip, &(server_address->sin_addr) ) <= 0) {
@@ -53,21 +53,18 @@ void start_connection(int sockfd, struct sockaddr *servaddr){
 }
 
 void send_command_to_server(int sockfd){
-    char message_to_server[300];
+    char message_to_server[MAXMESSAGE];
 
-    /*Read at most 100 chars from console into 'str' */
-    read(0, message_to_server, 300);
-
+    fgets(message_to_server, MAXMESSAGE, stdin);
     //send to server
-    write(sockfd, message_to_server, strlen(message_to_server) + 1);
+    write(sockfd, message_to_server, strlen(message_to_server));
 }
 
 void print_from_server(int sockfd) {
-  char message_from_server[300];
+  char message_from_server[MAXMESSAGE];
 
-  read(sockfd, message_from_server, 300);
-
-  printf("%s\n", message_from_server);
+  read(sockfd, message_from_server, MAXMESSAGE);
+  printf("%s", message_from_server);
 }
 
 int main(int argc, char **argv){
@@ -76,7 +73,7 @@ int main(int argc, char **argv){
 
     validate_args(argc, argv);
     sockfd = create_new_socket();
-    init_server_address(argv[1], &server_address);
+    init_server_address(argv[1], &server_address, atoi(argv[2]));
     start_connection(sockfd, (struct sockaddr *) &server_address);
 
     //forever
@@ -84,7 +81,6 @@ int main(int argc, char **argv){
         print_from_server(sockfd);
         send_command_to_server(sockfd);
         print_from_server(sockfd);
-
         exit(EXIT_FAILURE);
     }
 
