@@ -67,6 +67,19 @@ void print_from_server(int sockfd) {
   printf("%s", message_from_server);
 }
 
+void print_connection_info(char **argv, int sockfd){
+    struct sockaddr_in client_info;
+    char str[INET_ADDRSTRLEN];
+    socklen_t sa_len;
+
+    sa_len = sizeof(client_info);
+    getsockname(sockfd,  (struct sockaddr *) &client_info, &sa_len);
+    inet_ntop(AF_INET, &(client_info.sin_addr), str, INET_ADDRSTRLEN);
+    printf("Initiating connection IP Address %s and Port %s.\n", argv[1], argv[2]);
+    printf("Client application with IP Address %s and Port %d.\n", str, ntohs(client_info.sin_port));
+}
+
+
 int main(int argc, char **argv){
     int sockfd;
     struct sockaddr_in server_address;
@@ -75,6 +88,9 @@ int main(int argc, char **argv){
     sockfd = create_new_socket();
     init_server_address(argv[1], &server_address, atoi(argv[2]));
     start_connection(sockfd, (struct sockaddr *) &server_address);
+
+    print_connection_info(argv, sockfd);
+
 
     //forever
     for(;;){
