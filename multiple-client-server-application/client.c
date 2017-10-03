@@ -81,7 +81,7 @@ int main(int argc, char **argv){
         print_from_server(sockfd);
         send_command_to_server(sockfd);
         print_from_server(sockfd);
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }
 
     return 0;

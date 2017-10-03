@@ -81,33 +81,28 @@ void ask_for_command(int connfd){
 }
 
 void read_execute_command(int connfd){
-  char message_from_client[300], formated_message_server[1024]
-  , formated_message_client[1024];
+  char message_from_client[300], formated_message_server[1024];
 
   bzero( message_from_client, 300);
   bzero( formated_message_server, 1024);
-  bzero( formated_message_client, 1024);
 
-  read(connfd, message_from_client, 300);
+  if(read(connfd, message_from_client, 300) > 0) {
+    //write in server
+    strcpy(formated_message_server, "Command received: ");
+    strcat(formated_message_server, message_from_client);
+    printf("%s", formated_message_server);
 
-  //write in server
-  strcpy(formated_message_server, "Command received: ");
-  strcat(formated_message_server, message_from_client);
-  printf("%s", formated_message_server);
+    //write in client
+    write(connfd, message_from_client, strlen(message_from_client) + 1);
 
-  //write in client
-  strcpy(formated_message_client, "Server received: ");
-  strcat(formated_message_client, message_from_client);
-  write(connfd, formated_message_client, strlen(formated_message_client) + 1);
-
-  system(message_from_client);
+    system(message_from_client);
+  }
 }
 
 void handle_client(int connfd){
 
     ask_for_command(connfd);
     read_execute_command(connfd);
-    close(connfd);
 }
 
 int main(int argc, char **argv){
@@ -132,7 +127,10 @@ int main(int argc, char **argv){
     //if is child
     if(process_id == 0) {
        close(sockfd);
-       handle_client(connfd);
+       while(1){
+          handle_client(connfd);
+       }
+       close(connfd);
        exit(0);
     }
 
