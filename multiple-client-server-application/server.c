@@ -56,21 +56,20 @@ void listen_for_connections(int sockfd){
   }
 }
 
-int accept_connection(int sockfd){
+int accept_connection(int sockfd, struct sockaddr_in * peer_address){
   socklen_t length;
-  struct sockaddr_in peer_address;
   char str[INET_ADDRSTRLEN];
 
   length = sizeof(peer_address);
-  int connfd = accept(sockfd, (struct sockaddr *) &peer_address, &length);
+  int connfd = accept(sockfd, (struct sockaddr *) peer_address, &length);
 
   if(connfd < 0){
     printf("Erro to accept connection.\n");
     exit(EXIT_FAILURE);
   }
 
-  inet_ntop(AF_INET, &(peer_address.sin_addr), str, INET_ADDRSTRLEN);
-  printf("New connection - IP: %s PortNumber:%d\n", str, ntohs(peer_address.sin_port));
+  inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+  printf("New connection - IP: %s PortNumber:%d\n", str, ntohs(peer_address->sin_port));
 
   return connfd;
 }
@@ -100,17 +99,18 @@ void execute_command(int connfd, char * command) {
   pclose(fp);
 }
 
-void read_execute_command(int connfd){
-  char message_from_client[MAXMESSAGE], formated_message_server[1024];
+void read_execute_command(int connfd, struct sockaddr_in * peer_address){
+  char message_from_client[MAXMESSAGE];
+  char str[INET_ADDRSTRLEN];
 
   bzero( message_from_client, MAXMESSAGE);
-  bzero( formated_message_server, 1024);
 
   if(read(connfd, message_from_client, MAXMESSAGE) > 0) {
-    //write in server
-    strcpy(formated_message_server, "Command received: ");
-    strcat(formated_message_server, message_from_client);
-    printf("%s", formated_message_server);
+
+
+    inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+
+    printf("%s:%d sent: %s\n", str, ntohs(peer_address->sin_port), message_from_client);
 
     //write in client
     write(connfd, message_from_client, strlen(message_from_client) + 1);
@@ -119,15 +119,15 @@ void read_execute_command(int connfd){
   }
 }
 
-void handle_client(int connfd){
+void handle_client(int connfd, struct sockaddr_in * peer_address){
 
     ask_for_command(connfd);
-    read_execute_command(connfd);
+    read_execute_command(connfd, peer_address);
 }
 
 int main(int argc, char **argv){
   int sockfd, connfd;
-  struct sockaddr_in server_address;
+  struct sockaddr_in server_address, peer_address;;
   pid_t process_id;
 
   printf("Starting server...\n");
@@ -141,14 +141,14 @@ int main(int argc, char **argv){
   printf("Waiting for connections...\n");
 
   for(;;){
-    connfd = accept_connection(sockfd);
+    connfd = accept_connection(sockfd, &peer_address);
 
     process_id = fork();
     //if is child
     if(process_id == 0) {
        close(sockfd);
        while(1){
-          handle_client(connfd);
+          handle_client(connfd, &peer_address);
        }
        close(connfd);
        exit(0);
