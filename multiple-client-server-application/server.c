@@ -14,6 +14,18 @@
 #define MAXMESSAGE 300
 #define MAX_PENDING_CONNECTION_QUEUE 10
 
+void log_connection_file(struct sockaddr_in * peer_address) {
+  FILE *fp;
+  char str[INET_ADDRSTRLEN];
+
+  fp = fopen ("log.txt", "a");
+
+  inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+  fprintf(fp, "%s:%d connected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
+
+  fclose(fp);
+}
+
 void validate_args(int argc, char **argv){
     if (argc != 2) {
         printf("Error: ./program <PortNumber>\n");
@@ -70,6 +82,8 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
 
   inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
   printf("New connection - IP: %s PortNumber:%d\n", str, ntohs(peer_address->sin_port));
+
+  log_connection_file(peer_address);
 
   return connfd;
 }
