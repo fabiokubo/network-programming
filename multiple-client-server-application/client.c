@@ -52,7 +52,7 @@ void start_connection(int sockfd, struct sockaddr *servaddr){
 }
 
 void close_client(int sockfd) {
-  printf("Disconecting from server...\n");
+  printf("Disconnecting from server...\n");
   close(sockfd);
   printf("See ya!\n");
   exit(EXIT_SUCCESS);
