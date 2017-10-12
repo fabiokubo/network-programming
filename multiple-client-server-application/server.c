@@ -80,6 +80,26 @@ void ask_for_command(int connfd){
   write(connfd, message_to_client, strlen(message_to_client) + 1);
 }
 
+void execute_command(int connfd, char * command) {
+  FILE *fp;
+  char output[1035];
+
+  /* Open the command for reading. */
+  fp = popen(command, "r");
+  if (fp == NULL) {
+    printf("Failed to run command\n" );
+    exit(EXIT_FAILURE);
+  }
+
+  /* Read the output a line at a time - output it. */
+  while (fgets(output, sizeof(output)-1, fp) != NULL) {
+    write(connfd, output, strlen(output) + 1);
+  }
+
+  /* close */
+  pclose(fp);
+}
+
 void read_execute_command(int connfd){
   char message_from_client[MAXMESSAGE], formated_message_server[1024];
 
