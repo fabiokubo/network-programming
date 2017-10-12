@@ -6,7 +6,6 @@
 #include <netdb.h>
 #include <string.h>
 #include <errno.h>
-#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -52,10 +51,22 @@ void start_connection(int sockfd, struct sockaddr *servaddr){
     }
 }
 
+void close_client(int sockfd) {
+  printf("Disconecting from server...\n");
+  close(sockfd);
+  printf("See ya!\n");
+  exit(EXIT_SUCCESS);
+}
+
 void send_command_to_server(int sockfd){
     char message_to_server[MAXMESSAGE];
 
     fgets(message_to_server, MAXMESSAGE, stdin);
+
+    //fgets function adds \n in string, if is exit command, exit from program
+    if(strncmp(message_to_server, "exit\n", MAXMESSAGE) == 0) {
+      close_client(sockfd);
+    }
     //send to server
     write(sockfd, message_to_server, strlen(message_to_server));
 }
@@ -64,6 +75,7 @@ void print_from_server(int sockfd) {
   char message_from_server[MAXMESSAGE];
 
   read(sockfd, message_from_server, MAXMESSAGE);
+
   printf("%s", message_from_server);
 }
 
