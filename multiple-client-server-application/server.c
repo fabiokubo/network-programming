@@ -26,6 +26,18 @@ void log_connection_file(struct sockaddr_in * peer_address) {
   fclose(fp);
 }
 
+void log_disconnection_file(struct sockaddr_in * peer_address) {
+  FILE *fp;
+  char str[INET_ADDRSTRLEN];
+
+  fp = fopen ("log.txt", "a");
+
+  inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+  fprintf(fp, "%s:%d disconnected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
+
+  fclose(fp);
+}
+
 void validate_args(int argc, char **argv){
     if (argc != 2) {
         printf("Error: ./program <PortNumber>\n");
@@ -120,7 +132,6 @@ void read_execute_command(int connfd, struct sockaddr_in * peer_address){
   bzero( message_from_client, MAXMESSAGE);
 
   if(read(connfd, message_from_client, MAXMESSAGE) > 0) {
-
 
     inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
 
