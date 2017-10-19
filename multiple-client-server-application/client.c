@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define MAXMESSAGE 300
+#define MAXMESSAGE 1000
 
 void validate_args(int argc, char **argv){
     if (argc != 3) {
@@ -58,25 +58,41 @@ void close_client(int sockfd) {
   exit(EXIT_SUCCESS);
 }
 
+int isExitMessage(char * message_to_server) {
+  //fgets function adds \n in string, if is exit command, exit from program
+  return strncmp(message_to_server, "exit\n", MAXMESSAGE) == 0;
+}
+
 void send_command_to_server(int sockfd){
-    char message_to_server[MAXMESSAGE];
+    char message_to_server[MAXMESSAGE], message_from_server[MAXMESSAGE];
+    int n;
 
-    fgets(message_to_server, MAXMESSAGE, stdin);
+    printf("Welcome!\n");
 
-    //fgets function adds \n in string, if is exit command, exit from program
-    if(strncmp(message_to_server, "exit\n", MAXMESSAGE) == 0) {
-      close_client(sockfd);
+    while (fgets(message_to_server, MAXMESSAGE, stdin) != NULL) {
+      write(sockfd, message_to_server, strlen(message_to_server));
+
+      if(isExitMessage(message_to_server)) {
+        close_client(sockfd);
+        break;
+      }
+
+      if ((n = read(sockfd, message_from_server, MAXMESSAGE)) < 0) {
+        perror("read error");
+        exit(1);
+      }
+
+      message_from_server[n++] = 0;
+      printf("%s\n", message_from_server);
     }
-    //send to server
-    write(sockfd, message_to_server, strlen(message_to_server));
 }
 
 void print_from_server(int sockfd) {
   char message_from_server[MAXMESSAGE];
 
-  read(sockfd, message_from_server, MAXMESSAGE);
-
-  printf("%s", message_from_server);
+  while(read(sockfd, message_from_server, MAXMESSAGE) > 0) {
+    printf("%s\n", message_from_server);
+  }
 }
 
 void print_connection_info(char **argv, int sockfd){
@@ -100,14 +116,9 @@ int main(int argc, char **argv){
     sockfd = create_new_socket();
     init_server_address(argv[1], &server_address, atoi(argv[2]));
     start_connection(sockfd, (struct sockaddr *) &server_address);
-
     print_connection_info(argv, sockfd);
 
-    for(;;){
-        print_from_server(sockfd);
-        send_command_to_server(sockfd);
-        print_from_server(sockfd);
-    }
+    send_command_to_server(sockfd);
 
     return 0;
 }

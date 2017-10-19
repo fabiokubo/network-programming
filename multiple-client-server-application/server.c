@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-#define MAXMESSAGE 300
+#define MAXMESSAGE 1000
 #define MAX_PENDING_CONNECTION_QUEUE 10
 
 void log_connection_file(struct sockaddr_in * peer_address) {
@@ -88,7 +88,7 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
   int connfd = accept(sockfd, (struct sockaddr *) peer_address, &length);
 
   if(connfd < 0){
-    printf("Erro to accept connection.\n");
+    printf("Error to accept connection.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -100,14 +100,12 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
   return connfd;
 }
 
-void ask_for_command(int connfd){
-  char message_to_client[] = "Enter a command: ";
-  write(connfd, message_to_client, strlen(message_to_client) + 1);
-}
-
 void execute_command(int connfd, char * command) {
   FILE *fp;
-  char output[1035];
+  char output[MAXMESSAGE], outputAux[MAXMESSAGE];
+
+  memset(output, 0, MAXMESSAGE);
+  memset(outputAux, 0, MAXMESSAGE);
 
   /* Open the command for reading. */
   fp = popen(command, "r");
@@ -116,10 +114,14 @@ void execute_command(int connfd, char * command) {
     exit(EXIT_FAILURE);
   }
 
-  /* Read the output a line at a time - output it. */
-  while (fgets(output, sizeof(output)-1, fp) != NULL) {
-    write(connfd, output, strlen(output) + 1);
+  while ( fgets(outputAux, sizeof(outputAux), fp) != NULL) {
+    strcat(output, outputAux);
+    memset(outputAux, 0, MAXMESSAGE);
   }
+
+  write(connfd, output, strlen(output));
+  printf("%s\n", output);
+  fflush(stdout);
 
   /* close */
   pclose(fp);
@@ -128,26 +130,17 @@ void execute_command(int connfd, char * command) {
 void read_execute_command(int connfd, struct sockaddr_in * peer_address){
   char message_from_client[MAXMESSAGE];
   char str[INET_ADDRSTRLEN];
+  int lastChar;
 
-  bzero( message_from_client, MAXMESSAGE);
+  memset(message_from_client, 0, MAXMESSAGE);
 
-  if(read(connfd, message_from_client, MAXMESSAGE) > 0) {
-
+  if((lastChar = read(connfd, message_from_client, MAXMESSAGE)) > 0) {
+    //print client IP and Port
     inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+    printf("%s:%d sent: %s", str, ntohs(peer_address->sin_port), message_from_client);
 
-    printf("%s:%d sent: %s\n", str, ntohs(peer_address->sin_port), message_from_client);
-
-    //write in client
-    write(connfd, message_from_client, strlen(message_from_client) + 1);
-
-    system(message_from_client);
+    execute_command(connfd, message_from_client);
   }
-}
-
-void handle_client(int connfd, struct sockaddr_in * peer_address){
-
-    ask_for_command(connfd);
-    read_execute_command(connfd, peer_address);
 }
 
 int main(int argc, char **argv){
@@ -169,17 +162,18 @@ int main(int argc, char **argv){
     connfd = accept_connection(sockfd, &peer_address);
 
     process_id = fork();
-    //if is child
-    if(process_id == 0) {
-       close(sockfd);
-       while(1){
-          handle_client(connfd, &peer_address);
-       }
-       close(connfd);
-       exit(0);
-    }
 
-    close(connfd);
+    if(process_id != 0) {
+        close(connfd);
+    }
+    else{ //if is child
+      close(sockfd);
+      for(;;){
+         read_execute_command(connfd, &peer_address);
+      }
+      close(connfd);
+      exit(0);
+    }
   }
 
   return 0;
