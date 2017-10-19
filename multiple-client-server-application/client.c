@@ -70,11 +70,15 @@ void send_command_to_server(int sockfd){
     printf("Welcome!\n");
 
     while (fgets(message_to_server, MAXMESSAGE, stdin) != NULL) {
-      write(sockfd, message_to_server, strlen(message_to_server));
 
       if(isExitMessage(message_to_server)) {
+
+        write(sockfd, "CLIENT_EXIT_123\0", 15);
         close_client(sockfd);
         break;
+      }
+      else {
+        write(sockfd, message_to_server, strlen(message_to_server));
       }
 
       if ((n = read(sockfd, message_from_server, MAXMESSAGE)) < 0) {

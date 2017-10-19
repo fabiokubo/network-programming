@@ -21,6 +21,7 @@ void log_connection_file(struct sockaddr_in * peer_address) {
   fp = fopen ("log.txt", "a");
 
   inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+  printf("%s:%d connected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
   fprintf(fp, "%s:%d connected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
 
   fclose(fp);
@@ -33,6 +34,7 @@ void log_disconnection_file(struct sockaddr_in * peer_address) {
   fp = fopen ("log.txt", "a");
 
   inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+  printf("%s:%d disconnected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
   fprintf(fp, "%s:%d disconnected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
 
   fclose(fp);
@@ -54,6 +56,11 @@ int create_new_socket(){
   }
 
   return sockfd;
+}
+
+int isExitMessage(char * message_to_server) {
+  //fgets function adds \n in string, if is exit command, exit from program
+  return strncmp(message_to_server, "CLIENT_EXIT_123", MAXMESSAGE) == 0;
 }
 
 void initialize_server_address(struct sockaddr_in * server_address, int portNumber){
@@ -93,8 +100,6 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
   }
 
   inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
-  printf("*** New connection - IP: %s PortNumber:%d\n", str, ntohs(peer_address->sin_port));
-
   log_connection_file(peer_address);
 
   return connfd;
@@ -135,11 +140,17 @@ void read_execute_commands(int connfd, struct sockaddr_in * peer_address){
     memset(message_from_client, 0, MAXMESSAGE);
 
     if(read(connfd, message_from_client, MAXMESSAGE) > 0) {
-      //print client IP and Port
-      inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
-      printf(">>IP:%s PORT: %d COMMAND:%s", str, ntohs(peer_address->sin_port), message_from_client);
+      if(!isExitMessage(message_from_client)) {
 
-      execute_command(connfd, message_from_client);
+        //print client IP and Port
+        inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
+        printf(">>IP:%s PORT: %d COMMAND:%s", str, ntohs(peer_address->sin_port), message_from_client);
+        execute_command(connfd, message_from_client);
+      }
+      else {
+        log_disconnection_file(peer_address);
+        close(connfd);
+      }
     }
   }
 }
@@ -170,7 +181,6 @@ int main(int argc, char **argv){
     else{ //if is child
       close(sockfd);
       read_execute_commands(connfd, &peer_address);
-      close(connfd);
       exit(0);
     }
   }
