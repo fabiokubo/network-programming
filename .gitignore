@@ -50,3 +50,15 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+#Mac files
+.DS_Store
+
+#Log file
+log.txt
+
+#Binaries
+client
+server
+
+
