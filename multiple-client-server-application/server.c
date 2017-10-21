@@ -92,7 +92,7 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
 
   length = sizeof(peer_address);
   int connfd = accept(sockfd, (struct sockaddr *) peer_address, &length);
-  sleep(100);
+  sleep(1000);
 
   if(connfd < 0){
     printf("Error to accept connection.\n");
