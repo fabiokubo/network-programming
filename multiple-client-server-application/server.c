@@ -92,6 +92,7 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
 
   length = sizeof(peer_address);
   int connfd = accept(sockfd, (struct sockaddr *) peer_address, &length);
+  sleep(100);
 
   if(connfd < 0){
     printf("Error to accept connection.\n");
@@ -147,7 +148,6 @@ void read_execute_commands(int connfd, struct sockaddr_in * peer_address){
         execute_command(connfd, message_from_client);
       }
       else {
-        sleep(1000);
         log_disconnection_file(peer_address);
         close(connfd);
       }
