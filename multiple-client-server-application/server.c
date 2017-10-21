@@ -12,7 +12,6 @@
 #include <errno.h>
 
 #define MAXMESSAGE 1000
-#define MAX_PENDING_CONNECTION_QUEUE 10
 
 void log_connection_file(struct sockaddr_in * peer_address) {
   FILE *fp;
@@ -41,8 +40,8 @@ void log_disconnection_file(struct sockaddr_in * peer_address) {
 }
 
 void validate_args(int argc, char **argv){
-    if (argc != 2) {
-        printf("Error: ./program <PortNumber>\n");
+    if (argc != 3) {
+        printf("Error: ./program <PortNumber> <Backlog>\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -79,8 +78,8 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
   }
 }
 
-void listen_for_connections(int sockfd){
-  int listen_result = listen(sockfd, MAX_PENDING_CONNECTION_QUEUE);
+void listen_for_connections(int sockfd, int backlog){
+  int listen_result = listen(sockfd, backlog);
   if ( listen_result < 0) {
      printf("Error in method listen_for_connections.\n");
      exit(EXIT_FAILURE);
@@ -148,6 +147,7 @@ void read_execute_commands(int connfd, struct sockaddr_in * peer_address){
         execute_command(connfd, message_from_client);
       }
       else {
+        sleep(1000);
         log_disconnection_file(peer_address);
         close(connfd);
       }
@@ -166,7 +166,7 @@ int main(int argc, char **argv){
   sockfd = create_new_socket();
   initialize_server_address(&server_address, atoi(argv[1]));
   bind_name_to_socket((struct sockaddr *) &server_address, sockfd);
-  listen_for_connections(sockfd);
+  listen_for_connections(sockfd, atoi(argv[2]));
 
   printf("Waiting for connections...\n");
 
