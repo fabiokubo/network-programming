@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include <netdb.h>
 #include <sys/types.h>
@@ -10,6 +9,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <signal.h>
 
 #define MAXMESSAGE 1000
 
@@ -155,6 +155,34 @@ void read_execute_commands(int connfd, struct sockaddr_in * peer_address){
   }
 }
 
+typedef void Sigfunc(int);
+Sigfunc * Signal(int signo, Sigfunc *func) {
+	struct sigaction act, oact;
+	act.sa_handler = func;
+	sigemptyset(&act.sa_mask); /* Outros sinais não são bloqueados*/
+	act.sa_flags = 0;
+	if (signo == SIGALRM) { /* Para reiniciar chamadas interrompidas */
+#ifdef SA_INTERRUPT
+		act.sa_flags |= SA_INTERRUPT; /* SunOS 4.x */
+#endif
+	} else {
+#ifdef SA_RESTART
+		act.sa_flags |= SA_RESTART; /* SVR4, 4.4BSD */
+#endif
+	}
+	if (sigaction(signo, &act, &oact) < 0)
+		return (SIG_ERR);
+	return (oact.sa_handler);
+}
+
+void sig_chld(int signo) {
+	pid_t pid;
+	int stat;
+	while ((pid = waitpid(-1, &stat, WNOHANG)) > 0)
+		printf("child %d terminated\n", pid);
+	return;
+}
+
 int main(int argc, char **argv){
   int sockfd, connfd;
   struct sockaddr_in server_address, peer_address;;
@@ -170,8 +198,19 @@ int main(int argc, char **argv){
 
   printf("Waiting for connections...\n");
 
+  //register signal
+  Signal(SIGCHLD, sig_chld);
+
   for(;;){
-    connfd = accept_connection(sockfd, &peer_address);
+
+    if((connfd = accept_connection(sockfd, &peer_address)) < 0) {
+      if (errno == EINTR)
+        continue; /* se for tratar o sinal,quando voltar dá erro em funções lentas */
+      else {
+          printf("Accept error.\n");
+        	exit(1);
+      }
+    }
 
     process_id = fork();
 
@@ -181,7 +220,7 @@ int main(int argc, char **argv){
     else{ //if is child
       close(sockfd);
       read_execute_commands(connfd, &peer_address);
-      exit(0);
+      exit(EXIT_SUCCESS);
     }
   }
 
