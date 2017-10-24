@@ -1,15 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
+#include <errno.h>
 #include <time.h>
 #include <unistd.h>
-#include <arpa/inet.h>
-#include <errno.h>
+#include <netdb.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define MAXMESSAGE 1000
 
@@ -92,7 +93,6 @@ int accept_connection(int sockfd, struct sockaddr_in * peer_address){
 
   length = sizeof(peer_address);
   int connfd = accept(sockfd, (struct sockaddr *) peer_address, &length);
-  sleep(1000);
 
   if(connfd < 0){
     printf("Error to accept connection.\n");
