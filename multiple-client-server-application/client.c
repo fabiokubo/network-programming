@@ -68,16 +68,22 @@ int isExitMessage(char * message_to_server) {
 
 void send_command_to_server(int sockfd){
     char message_to_server[MAXMESSAGE], message_from_server[MAXMESSAGE];
-    int n, is_std_eof;
+    int n, is_std_eof, sent_bytes, received_bytes;
     fd_set rset;
 
-    printf("Welcome!\n");
-
     is_std_eof = 0;
+    sent_bytes = 0;
+    received_bytes = 0;
 
     FD_ZERO(&rset);
+
     //forever
     for ( ; ; ) {
+
+      //if all data sent were received, stop the client
+      if(is_std_eof == 1 && received_bytes == sent_bytes){
+        break;
+      }
 
       if(is_std_eof == 0)
         FD_SET(fileno(stdin), &rset);
@@ -88,7 +94,11 @@ void send_command_to_server(int sockfd){
       select(sockfd + 1, &rset, NULL, NULL, NULL);
 
       if (FD_ISSET(sockfd, &rset)) {	/* socket is readable */
-        if ( (n = read(sockfd, message_to_server, MAXMESSAGE)) == 0) {
+        n = read(sockfd, message_to_server, MAXMESSAGE);
+        received_bytes += n;
+
+        //last message
+        if ( n == 0) {
           if (is_std_eof == 1)
             return;		/* normal termination */
           else {
@@ -102,8 +112,12 @@ void send_command_to_server(int sockfd){
 
       if (FD_ISSET(fileno(stdin), &rset)) {  /* input is readable */
 
+        //read from stdin
+        n = read(fileno(stdin), message_from_server, MAXMESSAGE);
+        sent_bytes += n;
+
         //last message
-        if ( (n = read(fileno(stdin), message_from_server, MAXMESSAGE)) == 0) {
+        if ( n == 0) {
           is_std_eof = 1;
           shutdown(sockfd, SHUT_WR);	/* send FIN */
           FD_CLR(fileno(stdin), &rset);
