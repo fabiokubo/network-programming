@@ -8,6 +8,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #define MAXMESSAGE 1000
 
@@ -65,29 +68,51 @@ int isExitMessage(char * message_to_server) {
 
 void send_command_to_server(int sockfd){
     char message_to_server[MAXMESSAGE], message_from_server[MAXMESSAGE];
-    int n;
+    int n, is_std_eof;
+    fd_set rset;
 
     printf("Welcome!\n");
 
-    while (fgets(message_to_server, MAXMESSAGE, stdin) != NULL) {
+    is_std_eof = 0;
 
-      if(isExitMessage(message_to_server)) {
+    FD_ZERO(&rset);
+    //forever
+    for ( ; ; ) {
 
-        write(sockfd, "CLIENT_EXIT_123\0", 15);
-        close_client(sockfd);
-        break;
+      if(is_std_eof == 0)
+        FD_SET(fileno(stdin), &rset);
+
+      FD_SET(sockfd, &rset);
+
+      //set first parameter to the highest fd + 1
+      select(sockfd + 1, &rset, NULL, NULL, NULL);
+
+      if (FD_ISSET(sockfd, &rset)) {	/* socket is readable */
+        if ( (n = read(sockfd, message_to_server, MAXMESSAGE)) == 0) {
+          if (is_std_eof == 1)
+            return;		/* normal termination */
+          else {
+              printf("Error: could not read socket.\n");
+              exit(EXIT_FAILURE);
+          }
+        }
+
+        write(fileno(stdout), message_to_server, n);
       }
-      else {
-        write(sockfd, message_to_server, strlen(message_to_server));
-      }
 
-      if ((n = read(sockfd, message_from_server, MAXMESSAGE)) < 0) {
-        perror("read error");
-        exit(1);
-      }
+      if (FD_ISSET(fileno(stdin), &rset)) {  /* input is readable */
 
-      message_from_server[n++] = 0;
-      printf("%s\n", message_from_server);
+        //last message
+        if ( (n = read(fileno(stdin), message_from_server, MAXMESSAGE)) == 0) {
+          is_std_eof = 1;
+          shutdown(sockfd, SHUT_WR);	/* send FIN */
+          FD_CLR(fileno(stdin), &rset);
+          continue;
+        }
+
+        write(sockfd, message_from_server, n);
+
+      }
     }
 }
 
