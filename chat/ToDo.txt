@@ -1,0 +1,20 @@
+
+-> Bate Papo UDP
+    -> Criar servidor UDP
+    -> Criar cliente UDP
+
+-> Criar concorrência do servidor
+
+-> O cliente deve acessar o servidor tanto pelo nome quanto pelo endereço IP
+passados na linha de comando
+
+-> Transferência de arquivos TCP
+    -> Implementar transferência TCP entre clientes
+
+-> Criar lista de usuários conectados com nickname
+
+-> Implementar escolha de com quem conversar
+
+-> Desconectar do servidor
+
+-> Implementar log de eventos no servidor
