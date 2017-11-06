@@ -12,14 +12,33 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#define MAXMESSAGE 1000
 
-void validate_args(int argc, char **argv){
-    if (argc != 3) {
-        printf("Error: ./program <IPAddress> <PortNumber>\n");
+
+#define MAXNICKNAMESIZE 1000
+#define PORT 8080
+
+char* validate_server_ip(int argc, char **argv){
+    if (argc < 2 || argc > 3) {
+        printf("Usage:\n ./client <IPAddress>\n ./client <IPAddress> <Nickname>\n");
         exit(EXIT_FAILURE);
     }
+    return argv[1];
 }
+
+char* validate_nickname(int argc, char **argv){
+    char *nickname;
+    nickname = (char *)malloc(MAXNICKNAMESIZE * sizeof(char));
+    if (argc == 3) {
+        strcpy(nickname, argv[2]);
+    }else{
+        printf("Provide a nickname: ");
+        scanf(" %s", nickname);
+    }
+    return nickname;
+}
+
+
+/*
 
 int create_new_socket(){
     //Creates a new socket
@@ -87,10 +106,10 @@ void send_command_to_server(int sockfd){
       //set first parameter to the highest fd + 1
       select(sockfd + 1, &rset, NULL, NULL, NULL);
 
-      if (FD_ISSET(sockfd, &rset)) {	/* socket is readable */
+      if (FD_ISSET(sockfd, &rset)) {	// socket is readable
         if ( (n = read(sockfd, message_to_server, MAXMESSAGE)) == 0) {
           if (is_std_eof == 1)
-            return;		/* normal termination */
+            return;		// normal termination
           else {
               printf("Error: could not read socket.\n");
               exit(EXIT_FAILURE);
@@ -100,12 +119,12 @@ void send_command_to_server(int sockfd){
         write(fileno(stdout), message_to_server, n);
       }
 
-      if (FD_ISSET(fileno(stdin), &rset)) {  /* input is readable */
+      if (FD_ISSET(fileno(stdin), &rset)) {  // input is readable
 
         //last message
         if ( (n = read(fileno(stdin), message_from_server, MAXMESSAGE)) == 0) {
           is_std_eof = 1;
-          shutdown(sockfd, SHUT_WR);	/* send FIN */
+          shutdown(sockfd, SHUT_WR);	// send FIN
           FD_CLR(fileno(stdin), &rset);
           continue;
         }
@@ -135,19 +154,23 @@ void print_connection_info(char **argv, int sockfd){
     printf("Initiating connection IP Address %s and Port %s.\n", argv[1], argv[2]);
     printf("Client application with IP Address %s and Port %d.\n", str, ntohs(client_info.sin_port));
 }
-
+*/
 
 int main(int argc, char **argv){
     int sockfd;
     struct sockaddr_in server_address;
+    char *server_ip, *nickname;
 
-    validate_args(argc, argv);
-    sockfd = create_new_socket();
-    init_server_address(argv[1], &server_address, atoi(argv[2]));
-    start_connection(sockfd, (struct sockaddr *) &server_address);
-    print_connection_info(argv, sockfd);
+    server_ip = validate_server_ip(argc, argv);
+    nickname = validate_nickname(argc, argv);
+    //validate_args(argc, argv);
+    //sockfd = create_new_socket();
+    //init_server_address(argv[1], &server_address, atoi(argv[2]));
+    //start_connection(sockfd, (struct sockaddr *) &server_address);
+    //print_connection_info(argv, sockfd);
 
-    send_command_to_server(sockfd);
-
+    //send_command_to_server(sockfd);
+    printf("%s %s \n", server_ip, nickname);
+    free(nickname);
     return 0;
 }
