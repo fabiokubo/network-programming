@@ -31,7 +31,7 @@ char* validate_nickname(int argc, char **argv){
     if (argc == 3) {
         strcpy(nickname, argv[2]);
     }else{
-        printf("Provide a nickname: ");
+        printf("Provide your nickname: ");
         scanf(" %s", nickname);
     }
     return nickname;
