@@ -13,6 +13,13 @@
 #include <arpa/inet.h>
 
 #define BUFLEN 512
+#define MAX_CLIENTS 10
+
+typedef struct Client {
+  int portNumber;
+  char iPAddress[20];
+  char nickName[50];
+} Client;
 
 void log_connection_file(struct sockaddr_in * peer_address) {
   FILE *fp;
@@ -79,6 +86,13 @@ int main(int argc, char **argv){
   socklen_t slen;
   int sockfd, recv_len;
   char buf[BUFLEN];
+
+  //array with all known clients
+  Client clients[MAX_CLIENTS];
+
+  //quantity of known clients
+  int n_clients = 0;
+
 
   printf("Starting server...\n");
 
