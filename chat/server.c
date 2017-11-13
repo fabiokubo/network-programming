@@ -1,25 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <time.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include "utils.h"
 
 #define BUFLEN 512
 #define MAX_CLIENTS 10
-
-typedef struct Client {
-  int portNumber;
-  char iPAddress[20];
-  char nickname[50];
-} Client;
 
 void log_connection_file(struct sockaddr_in * peer_address) {
   FILE *fp;
