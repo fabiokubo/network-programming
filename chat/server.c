@@ -155,9 +155,6 @@ int main(int argc, char **argv){
       //print details of the client/peer and the data received
       printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
       printf("Data: %s\n" , buf);
-
-      //now reply the client with the same data
-      //sendMessageToUser(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
   }
 
   return 0;

@@ -1,0 +1,13 @@
+-> To compile:
+gcc server.c -o server -Wall
+gcc client.c -o client -Wall
+
+or
+
+make
+
+
+-> To execute
+
+./server <portNumber>
+./client <IPAdress> <PortNumber>

@@ -47,6 +47,8 @@ void receiveMessageFromServer(int sockfd, char * buf, struct sockaddr * server_a
     printf("Error: recvfrom() method.\n");
     exit(EXIT_FAILURE);
   }
+
+  printf("%s\n", buf);
 }
 
 void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
@@ -62,17 +64,28 @@ void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_ad
   sentMessageToServer(sockfd, message, server_address, slen);
 }
 
+int isExitMessage(char * message) {
+  //fgets function adds \n in string, if is exit command, exit from program
+  return strncmp(message, "exit\n", BUFLEN) == 0;
+}
+
 int main(int argc, char **argv)
 {
     struct sockaddr_in server_address;
     socklen_t slen=sizeof(server_address);
     int sockfd;
-    char buf[BUFLEN], message[BUFLEN], nickname[50];
+    char buf[BUFLEN], nickname[50];
 
     validate_parameters(argc, argv);
 
     sockfd = create_new_socket();
     initialize_server_address(argv[1], &server_address, atoi(argv[2]));
+
+    printf("Welcome!\n");
+    printf("Instructions:\n");
+    printf("- Command to send message: M <nickname> <message_content>\n");
+    printf("- Command to send file: F <nickname> <file_name>\n");
+    printf("- Command to exit: exit\n\n");
 
     printf("Enter your nickname: ");
     fgets(nickname , 50 , stdin);
@@ -81,16 +94,17 @@ int main(int argc, char **argv)
     sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
 
     for(;;){
-
-        //send the message
-        //sentMessageToServer(sockfd, message, (struct sockaddr *) &server_address, slen);
-
         memset(buf,'\0', BUFLEN);
         receiveMessageFromServer(sockfd, buf, (struct sockaddr *) &server_address, &slen);
 
-        puts(buf);
+        memset(buf,'\0', BUFLEN);
+        fgets(buf, BUFLEN, stdin);
+        if(isExitMessage(buf)){
+          close(sockfd);
+          printf("Bye bye!\n");
+          exit(EXIT_SUCCESS);
+        }
+        sentMessageToServer(sockfd, buf, (struct sockaddr *)&server_address, slen);
     }
-
-    close(sockfd);
     return 0;
 }
