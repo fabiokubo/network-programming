@@ -62,6 +62,24 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
   }
 }
 
+int receiveMessageFromClient(int sockfd, char * buf, struct sockaddr * peer_address, socklen_t * slen){
+  int recv_len;
+
+  if ((recv_len = recvfrom(sockfd, buf, BUFLEN, 0, peer_address, slen)) == -1){
+    printf("Error: receiving message.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  return recv_len;
+}
+
+void sendMessageToClient(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
+  if (sendto(sockfd, buf, recv_len, 0, peer_address, slen) == -1){
+    printf("Error: sending message.\n");
+    exit(EXIT_FAILURE);
+  }
+}
+
 int main(int argc, char **argv){
   struct sockaddr_in server_address, peer_address;
   socklen_t slen;
@@ -73,7 +91,6 @@ int main(int argc, char **argv){
 
   //quantity of known clients
   int n_clients = 0;
-
 
   printf("Starting server...\n");
 
@@ -90,20 +107,14 @@ int main(int argc, char **argv){
       //try to receive some data, this is a blocking call
       slen = sizeof(peer_address);
       memset(buf,0,sizeof(buf));
-      if ((recv_len = recvfrom(sockfd, buf, BUFLEN, 0, (struct sockaddr *) &peer_address, &slen)) == -1){
-        printf("Error: receiving message.\n");
-        exit(EXIT_FAILURE);
-      }
+      recv_len = receiveMessageFromClient(sockfd, buf, (struct sockaddr *) &peer_address, &slen);
 
       //print details of the client/peer and the data received
       printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
       printf("Data: %s" , buf);
 
       //now reply the client with the same data
-      if (sendto(sockfd, buf, recv_len, 0, (struct sockaddr*) &peer_address, slen) == -1){
-        printf("Error: sending message.\n");
-        exit(EXIT_FAILURE);
-      }
+      sendMessageToClient(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
   }
 
   return 0;
