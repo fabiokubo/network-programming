@@ -12,8 +12,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#define BUFLEN 512  //Max length of buffer
+
 typedef struct Client {
   int portNumber;
   char iPAddress[20];
   char nickname[50];
 } Client;
+
+enum MESSAGE_TYPE {
+  REGISTER_USER=33,
+  NORMAL=2
+};

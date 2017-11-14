@@ -1,6 +1,5 @@
 #include "utils.h"
 
-#define BUFLEN 512
 #define MAX_CLIENTS 10
 
 void log_connection_file(struct sockaddr_in * peer_address) {

@@ -1,10 +1,5 @@
 #include "utils.h"
 
-#define BUFLEN 512  //Max length of buffer
-
-enum TV {FOX=11, CNN=25, ESPN=15,
-        HBO=22, MAX=30, NBC=32};
-
 void validate_parameters(int argc, char **argv){
     if (argc != 3) {
         printf("Error: ./client <IPAddress> <PorNumber>\n");
@@ -59,7 +54,7 @@ void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_ad
   char message[BUFLEN];
 
   //first message
-  message[0] = 'f';
+  message[0] = REGISTER_USER;
 
   //copying nickname into first message
   strcpy(&message[1], nickname);
