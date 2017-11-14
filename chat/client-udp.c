@@ -74,10 +74,10 @@ int main(int argc, char **argv)
     sockfd = create_new_socket();
     initialize_server_address(argv[1], &server_address, atoi(argv[2]));
 
-    printf("Enter your nickname:\n");
+    printf("Enter your nickname: ");
     fgets(nickname , 50 , stdin);
 
-    printf("Trying to connect with server...");
+    printf("Trying to connect with server...\n\n");
     sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
 
     for(;;){

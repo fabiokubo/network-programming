@@ -77,6 +77,20 @@ void sendMessageToClient(int sockfd, char * buf, int recv_len, struct sockaddr *
   }
 }
 
+void sendClientsList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
+  int i, n;
+  char message[BUFLEN], * aux;
+
+  n = sprintf(message, "Connected Users:\n");
+  aux = message + n;
+  for (i = 0; i < n_clients; i++) {
+    // id - nickname
+    n = sprintf(aux, "%d - %s\n", i, clients[i].nickname);
+    aux += n;
+  }
+  sendMessageToClient(sockfd, message, strlen(message), peer_address, slen);
+}
+
 void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
 
   clients[n_clients].portNumber = ntohs(peer_address->sin_port);
@@ -91,12 +105,13 @@ void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
   n_clients++;
 }
 
-void processMessage(char * buf, int recv_len, struct sockaddr_in * peer_address){
+void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
 
     switch(buf[0]){
       case REGISTER_USER :
         printf("Teste\n");
-        addNewUser(buf, recv_len, peer_address);
+        addNewUser(buf, recv_len, (struct sockaddr_in *) peer_address);
+        sendClientsList(sockfd, peer_address, slen);
         break;
     }
 }
@@ -109,7 +124,7 @@ int receiveMessageFromClient(int sockfd, char * buf, struct sockaddr * peer_addr
     exit(EXIT_FAILURE);
   }
 
-  processMessage(buf, recv_len, (struct sockaddr_in*) peer_address);
+  processMessage(sockfd, buf, recv_len, peer_address, * slen);
 
   return recv_len;
 }
@@ -142,7 +157,7 @@ int main(int argc, char **argv){
       printf("Data: %s\n" , buf);
 
       //now reply the client with the same data
-      sendMessageToClient(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
+      //sendMessageToClient(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
   }
 
   return 0;
