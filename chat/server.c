@@ -18,7 +18,7 @@
 typedef struct Client {
   int portNumber;
   char iPAddress[20];
-  char nickName[50];
+  char nickname[50];
 } Client;
 
 void log_connection_file(struct sockaddr_in * peer_address) {

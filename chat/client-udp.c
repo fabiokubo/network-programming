@@ -36,10 +36,16 @@ void initialize_server_address(char * server_ip, struct sockaddr_in * server_add
   }
 }
 
+void die(char *s){
+    perror(s);
+    exit(1);
+}
+
 void sentMessageToServer(int sockfd, char * message, struct sockaddr * server_address, socklen_t slen){
   if (sendto(sockfd, message, strlen(message) , 0 , server_address, slen)==-1){
-    printf("Error: sendto() method.\n");
-    exit(EXIT_FAILURE);
+    die("sendto()");
+    //printf("Error: sendto() method.\n");
+    //exit(EXIT_FAILURE);
   }
 }
 
@@ -50,19 +56,25 @@ void receiveMessageFromServer(int sockfd, char * buf, struct sockaddr * server_a
   }
 }
 
-void die(char *s)
-{
-    perror(s);
-    exit(1);
+void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
+
+  char message[BUFLEN];
+
+  //first message
+  message[0] = 1;
+
+  //copying nickname into first message
+  strcpy(&message[1], nickname);
+
+  sentMessageToServer(sockfd, message, (struct sockaddr *) &server_address, slen);
 }
 
 int main(int argc, char **argv)
 {
     struct sockaddr_in server_address;
-    socklen_t slen;
+    socklen_t slen=sizeof(server_address);
     int sockfd;
-    char buf[BUFLEN];
-    char message[BUFLEN];
+    char buf[BUFLEN], message[BUFLEN], nickname[50];
 
     validate_parameters(argc, argv);
 
@@ -70,11 +82,13 @@ int main(int argc, char **argv)
     initialize_server_address(argv[1], &server_address, atoi(argv[2]));
 
     for(;;){
-        printf("Enter message : ");
-        gets(message);
+        printf("Enter your nickname:\n");
+        scanf("%s", message);
+
+        printf("Trying to connect with server...");
+        //sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
 
         //send the message
-        slen=sizeof(server_address);
         sentMessageToServer(sockfd, message, (struct sockaddr *) &server_address, slen);
 
         memset(buf,'\0', BUFLEN);
