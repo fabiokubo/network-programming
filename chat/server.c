@@ -2,6 +2,14 @@
 
 #define MAX_CLIENTS 10
 
+/*Global variables*/
+//array with all known clients
+Client clients[MAX_CLIENTS];
+
+//quantity of known clients
+int n_clients = 0;
+
+
 void log_connection_file(struct sockaddr_in * peer_address) {
   FILE *fp;
   char str[INET_ADDRSTRLEN];
@@ -62,6 +70,30 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
   }
 }
 
+void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
+
+  clients[n_clients].portNumber = ntohs(peer_address->sin_port);
+  strcpy(clients[n_clients].iPAddress, inet_ntoa(peer_address->sin_addr));
+
+  buf[recv_len-1] = '\0';
+  strcpy(clients[n_clients].nickname, &buf[1]);
+
+  printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
+  printf("New user added: %s, Address - %s : %d.\n", clients[n_clients].nickname, clients[n_clients].iPAddress, clients[n_clients].portNumber);
+
+  n_clients++;
+}
+
+void processMessage(char * buf, int recv_len, struct sockaddr_in * peer_address){
+
+    switch(buf[0]){
+      case REGISTER_USER :
+        printf("Teste\n");
+        addNewUser(buf, recv_len, peer_address);
+        break;
+    }
+}
+
 int receiveMessageFromClient(int sockfd, char * buf, struct sockaddr * peer_address, socklen_t * slen){
   int recv_len;
 
@@ -69,6 +101,8 @@ int receiveMessageFromClient(int sockfd, char * buf, struct sockaddr * peer_addr
     printf("Error: receiving message.\n");
     exit(EXIT_FAILURE);
   }
+
+  processMessage(buf, recv_len, (struct sockaddr_in*) peer_address);
 
   return recv_len;
 }
@@ -86,12 +120,6 @@ int main(int argc, char **argv){
   int sockfd, recv_len;
   char buf[BUFLEN];
 
-  //array with all known clients
-  Client clients[MAX_CLIENTS];
-
-  //quantity of known clients
-  int n_clients = 0;
-
   printf("Starting server...\n");
 
   validate_args(argc, argv);
@@ -101,7 +129,7 @@ int main(int argc, char **argv){
 
   //loops forever
   for(;;){
-      printf("Waiting for data...");
+      printf("Waiting for data...\n");
       fflush(stdout);
 
       //try to receive some data, this is a blocking call
@@ -111,7 +139,7 @@ int main(int argc, char **argv){
 
       //print details of the client/peer and the data received
       printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
-      printf("Data: %s" , buf);
+      printf("Data: %s\n" , buf);
 
       //now reply the client with the same data
       sendMessageToClient(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
