@@ -70,6 +70,13 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
   }
 }
 
+void sendMessageToClient(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
+  if (sendto(sockfd, buf, recv_len, 0, peer_address, slen) == -1){
+    printf("Error: sending message.\n");
+    exit(EXIT_FAILURE);
+  }
+}
+
 void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
 
   clients[n_clients].portNumber = ntohs(peer_address->sin_port);
@@ -105,13 +112,6 @@ int receiveMessageFromClient(int sockfd, char * buf, struct sockaddr * peer_addr
   processMessage(buf, recv_len, (struct sockaddr_in*) peer_address);
 
   return recv_len;
-}
-
-void sendMessageToClient(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
-  if (sendto(sockfd, buf, recv_len, 0, peer_address, slen) == -1){
-    printf("Error: sending message.\n");
-    exit(EXIT_FAILURE);
-  }
 }
 
 int main(int argc, char **argv){
