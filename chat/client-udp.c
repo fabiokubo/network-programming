@@ -7,6 +7,9 @@
 
 #define BUFLEN 512  //Max length of buffer
 
+enum TV {FOX=11, CNN=25, ESPN=15,
+        HBO=22, MAX=30, NBC=32};
+
 void validate_parameters(int argc, char **argv){
     if (argc != 3) {
         printf("Error: ./client <IPAddress> <PorNumber>\n");
@@ -61,12 +64,12 @@ void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_ad
   char message[BUFLEN];
 
   //first message
-  message[0] = 1;
+  message[0] = 'f';
 
   //copying nickname into first message
   strcpy(&message[1], nickname);
 
-  sentMessageToServer(sockfd, message, (struct sockaddr *) &server_address, slen);
+  sentMessageToServer(sockfd, message, server_address, slen);
 }
 
 int main(int argc, char **argv)
@@ -81,15 +84,16 @@ int main(int argc, char **argv)
     sockfd = create_new_socket();
     initialize_server_address(argv[1], &server_address, atoi(argv[2]));
 
-    for(;;){
-        printf("Enter your nickname:\n");
-        scanf("%s", message);
+    printf("Enter your nickname:\n");
+    fgets(nickname , 50 , stdin);
 
-        printf("Trying to connect with server...");
-        //sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
+    printf("Trying to connect with server...");
+    sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
+
+    for(;;){
 
         //send the message
-        sentMessageToServer(sockfd, message, (struct sockaddr *) &server_address, slen);
+        //sentMessageToServer(sockfd, message, (struct sockaddr *) &server_address, slen);
 
         memset(buf,'\0', BUFLEN);
         receiveMessageFromServer(sockfd, buf, (struct sockaddr *) &server_address, &slen);
