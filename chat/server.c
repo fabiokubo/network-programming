@@ -1,10 +1,10 @@
 #include "utils.h"
 
-#define MAX_CLIENTS 10
+#define MAX_USERS 10
 
 /*Global variables*/
 //array with all known users
-User users[MAX_CLIENTS];
+User users[MAX_USERS];
 
 //quantity of known users
 int n_users = 0;
