@@ -3,11 +3,11 @@
 #define MAX_CLIENTS 10
 
 /*Global variables*/
-//array with all known clients
-Client clients[MAX_CLIENTS];
+//array with all known users
+User users[MAX_CLIENTS];
 
-//quantity of known clients
-int n_clients = 0;
+//quantity of known users
+int n_users = 0;
 
 
 void log_connection_file(struct sockaddr_in * peer_address) {
@@ -70,39 +70,39 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
   }
 }
 
-void sendMessageToClient(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
+void sendMessageToUser(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
   if (sendto(sockfd, buf, recv_len, 0, peer_address, slen) == -1){
     printf("Error: sending message.\n");
     exit(EXIT_FAILURE);
   }
 }
 
-void sendClientsList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
+void sendUsersList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
   int i, n;
   char message[BUFLEN], * aux;
 
   n = sprintf(message, "Connected Users:\n");
   aux = message + n;
-  for (i = 0; i < n_clients; i++) {
+  for (i = 0; i < n_users; i++) {
     // id - nickname
-    n = sprintf(aux, "%d - %s\n", i, clients[i].nickname);
+    n = sprintf(aux, "%d - %s\n", i, users[i].nickname);
     aux += n;
   }
-  sendMessageToClient(sockfd, message, strlen(message), peer_address, slen);
+  sendMessageToUser(sockfd, message, strlen(message), peer_address, slen);
 }
 
 void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
 
-  clients[n_clients].portNumber = ntohs(peer_address->sin_port);
-  strcpy(clients[n_clients].iPAddress, inet_ntoa(peer_address->sin_addr));
+  users[n_users].portNumber = ntohs(peer_address->sin_port);
+  strcpy(users[n_users].iPAddress, inet_ntoa(peer_address->sin_addr));
 
   buf[recv_len-1] = '\0';
-  strcpy(clients[n_clients].nickname, &buf[1]);
+  strcpy(users[n_users].nickname, &buf[1]);
 
   printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
-  printf("New user added: %s, Address - %s : %d.\n", clients[n_clients].nickname, clients[n_clients].iPAddress, clients[n_clients].portNumber);
+  printf("New user added: %s, Address - %s : %d.\n", users[n_users].nickname, users[n_users].iPAddress, users[n_users].portNumber);
 
-  n_clients++;
+  n_users++;
 }
 
 void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
@@ -111,12 +111,12 @@ void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer
       case REGISTER_USER :
         printf("Teste\n");
         addNewUser(buf, recv_len, (struct sockaddr_in *) peer_address);
-        sendClientsList(sockfd, peer_address, slen);
+        sendUsersList(sockfd, peer_address, slen);
         break;
     }
 }
 
-int receiveMessageFromClient(int sockfd, char * buf, struct sockaddr * peer_address, socklen_t * slen){
+int receiveMessageFromUser(int sockfd, char * buf, struct sockaddr * peer_address, socklen_t * slen){
   int recv_len;
 
   if ((recv_len = recvfrom(sockfd, buf, BUFLEN, 0, peer_address, slen)) == -1){
@@ -150,14 +150,14 @@ int main(int argc, char **argv){
       //try to receive some data, this is a blocking call
       slen = sizeof(peer_address);
       memset(buf,0,sizeof(buf));
-      recv_len = receiveMessageFromClient(sockfd, buf, (struct sockaddr *) &peer_address, &slen);
+      recv_len = receiveMessageFromUser(sockfd, buf, (struct sockaddr *) &peer_address, &slen);
 
       //print details of the client/peer and the data received
       printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
       printf("Data: %s\n" , buf);
 
       //now reply the client with the same data
-      //sendMessageToClient(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
+      //sendMessageToUser(sockfd, buf, recv_len, (struct sockaddr *) &peer_address, slen);
   }
 
   return 0;

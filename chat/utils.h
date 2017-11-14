@@ -14,11 +14,11 @@
 
 #define BUFLEN 512  //Max length of buffer
 
-typedef struct Client {
+typedef struct User {
   int portNumber;
   char iPAddress[20];
   char nickname[50];
-} Client;
+} User;
 
 enum MESSAGE_TYPE {
   REGISTER_USER=33,
