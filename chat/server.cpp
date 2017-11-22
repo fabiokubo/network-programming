@@ -1,14 +1,13 @@
+#include<vector>
 #include "utils.h"
+
+using namespace std;
 
 #define MAX_USERS 10
 
 /*Global variables*/
-//array with all known users
-User users[MAX_USERS];
-
-//quantity of known users
-int n_users = 0;
-
+//Connected users
+vector<User> users;
 
 void log_connection_file(struct sockaddr_in * peer_address) {
   FILE *fp;
@@ -83,7 +82,7 @@ void sendUsersList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
 
   n = sprintf(message, "Connected Users:\n");
   aux = message + n;
-  for (i = 0; i < n_users; i++) {
+  for (i = 0; i < users.size(); i++) {
     // id - nickname
     n = sprintf(aux, "%d - %s\n", i, users[i].nickname);
     aux += n;
@@ -93,16 +92,18 @@ void sendUsersList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
 
 void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
 
-  users[n_users].portNumber = ntohs(peer_address->sin_port);
-  strcpy(users[n_users].iPAddress, inet_ntoa(peer_address->sin_addr));
+  User newUser;
+
+  newUser.portNumber = ntohs(peer_address->sin_port);
+  strcpy(newUser.iPAddress, inet_ntoa(peer_address->sin_addr));
 
   buf[recv_len-1] = '\0';
-  strcpy(users[n_users].nickname, &buf[1]);
+  strcpy(newUser.nickname, &buf[1]);
+
+  users.push_back(newUser);
 
   printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
-  printf("New user added: %s, Address - %s : %d.\n", users[n_users].nickname, users[n_users].iPAddress, users[n_users].portNumber);
-
-  n_users++;
+  printf("New user added: %s, Address - %s : %d.\n", newUser.nickname, newUser.iPAddress, newUser.portNumber);
 }
 
 void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
