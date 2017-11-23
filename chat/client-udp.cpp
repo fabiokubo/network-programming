@@ -61,6 +61,17 @@ void sendTextMessage(int sockfd, char * message_content, struct sockaddr * serve
   sentMessageToServer(sockfd, message, server_address, slen);
 }
 
+void sendExitMessage(int sockfd, struct sockaddr * server_address, socklen_t slen, char * nickname){
+
+  char message[BUFLEN];
+
+  //first message
+  message[0] = EXIT_MESSAGE;
+  strcpy(&message[1], nickname);
+
+  sentMessageToServer(sockfd, message, server_address, slen);
+}
+
 void printInstructions(){
   printf("Instructions:\n");
   printf("- Command to send message: M <nickname> <message_content>\n");
@@ -68,10 +79,11 @@ void printInstructions(){
   printf("- Command to exit: exit\n\n");
 }
 
-void handleInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen){
+void handleInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen, char * nickname){
 
   //handle exit command
   if(strncmp(buf, "exit\n", BUFLEN) == 0){
+    sendExitMessage(sockfd, server_address, slen, nickname);
     close(sockfd);
     printf("Bye bye!\n");
     exit(EXIT_SUCCESS);
@@ -121,7 +133,7 @@ int main(int argc, char **argv)
         memset(buf,'\0', BUFLEN);
         printf("Digite algo: \n");
         fgets(buf, BUFLEN, stdin);
-        handleInput(buf, sockfd, (struct sockaddr *)&server_address, slen);
+        handleInput(buf, sockfd, (struct sockaddr *)&server_address, slen, nickname);
     }
     return 0;
 }

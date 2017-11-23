@@ -115,6 +115,11 @@ void handleTextMessage(int sockfd, char * buf){
   }
 }
 
+void handleExit(char * buf){
+  int userIndex = getUserIndexByNickname(users, getNickname(buf));
+  users.erase(users.begin() + userIndex);
+}
+
 void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
 
   switch(buf[0]){
@@ -125,6 +130,10 @@ void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer
     case TEXT_MESSAGE:
       handleTextMessage(sockfd, buf);
       break;
+    case EXIT_MESSAGE:
+      handleExit(buf);
+      break;
+
   }
 }
 

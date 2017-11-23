@@ -28,7 +28,8 @@ typedef struct User {
 
 enum MESSAGE_TYPE {
   REGISTER_USER=33,
-  TEXT_MESSAGE=34
+  TEXT_MESSAGE=34,
+  EXIT_MESSAGE=35
 };
 
 int getUserIndexByNickname(vector<User> users, string nickname) {
