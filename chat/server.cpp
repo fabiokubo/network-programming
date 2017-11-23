@@ -63,7 +63,7 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
   }
 }
 
-void sendMessageToUser(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
+void sendMessageToUser(int sockfd, const char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
   if (sendto(sockfd, buf, recv_len, 0, peer_address, slen) == -1){
     printf("Error: sending message.\n");
     exit(EXIT_FAILURE);
@@ -78,7 +78,7 @@ void sendUsersList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
   aux = message + n;
   for (i = 0; i < users.size(); i++) {
     // id - nickname
-    n = sprintf(aux, "%d - %s\n", i, users[i].nickname);
+    n = sprintf(aux, "%d - %s\n", i, users[i].nickname.c_str());
     aux += n;
   }
   sendMessageToUser(sockfd, message, strlen(message), peer_address, slen);
@@ -89,26 +89,58 @@ void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
   User newUser;
 
   newUser.portNumber = ntohs(peer_address->sin_port);
-  strcpy(newUser.iPAddress, inet_ntoa(peer_address->sin_addr));
+  newUser.iPAddress.assign(inet_ntoa(peer_address->sin_addr));
 
   buf[recv_len-1] = '\0';
-  strcpy(newUser.nickname, &buf[1]);
+  newUser.nickname.assign(&buf[1]);
 
   users.push_back(newUser);
 
   printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
-  printf("New user added: %s, Address - %s : %d.\n", newUser.nickname, newUser.iPAddress, newUser.portNumber);
+  printf("New user added: %s, Address - %s : %d.\n", newUser.nickname.c_str(), newUser.iPAddress.c_str(), newUser.portNumber);
+}
+
+string getNickname(char * buf){
+  size_t spacePosition;
+  string aux(buf);
+  spacePosition = aux.find(" ");
+  return aux.substr(1, spacePosition - 1);
+}
+
+string getMessage(char * buf){
+  size_t spacePosition;
+  string aux(buf);
+  spacePosition = aux.find(" ");
+  printf("%s\n", aux.substr(spacePosition + 1).c_str());
+  return aux.substr(spacePosition + 1);
+}
+
+void handleTextMessage(int sockfd, char * buf){
+  int userIndex;
+  string message;
+  struct sockaddr_in address;
+  socklen_t slen=sizeof(address);
+
+  userIndex = getUserIndexByNickname(users, getNickname(buf));
+  message = getMessage(buf);
+
+  if(userIndex > 0) {
+    initializeAddressByUser(&address, users[userIndex]);
+    sendMessageToUser(sockfd, message.c_str(), message.length(), (struct sockaddr *) &address, slen);
+  }
 }
 
 void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
 
-    switch(buf[0]){
-      case REGISTER_USER :
-        printf("Teste\n");
-        addNewUser(buf, recv_len, (struct sockaddr_in *) peer_address);
-        sendUsersList(sockfd, peer_address, slen);
-        break;
-    }
+  switch(buf[0]){
+    case REGISTER_USER:
+      addNewUser(buf, recv_len, (struct sockaddr_in *) peer_address);
+      sendUsersList(sockfd, peer_address, slen);
+      break;
+    case TEXT_MESSAGE:
+      handleTextMessage(sockfd, buf);
+      break;
+  }
 }
 
 int receiveMessageFromUser(int sockfd, char * buf, struct sockaddr * peer_address, socklen_t * slen){

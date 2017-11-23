@@ -1,7 +1,9 @@
 #include<vector>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
@@ -19,22 +21,38 @@ using namespace std;
 
 typedef struct User {
   int portNumber;
-  char iPAddress[20];
-  char nickname[50];
+  string iPAddress;
+  string nickname;
 } User;
 
 enum MESSAGE_TYPE {
   REGISTER_USER=33,
-  TEXT_MESSAGE=32
+  TEXT_MESSAGE=34
 };
 
-int getUserIndexByNickname(vector<User> users, char * nickname) {
+int getUserIndexByNickname(vector<User> users, string nickname) {
   int i;
 
   for(i = 0; i < users.size(); i++) {
-    if(strcmp(users[i].nickname, nickname) == 0) {
+    if(users[i].nickname == nickname) {
       return i;
     }
   }
   return -1;
+}
+
+void initializeAddress(const char * server_ip, struct sockaddr_in * address, int portNumber){
+  bzero(address, sizeof(* address));
+  address->sin_family      = AF_INET;
+  address->sin_port        = htons(portNumber);
+
+  //Converts server address IP from string to binary and saves in address
+  if (inet_pton(AF_INET, server_ip, &(address->sin_addr) ) <= 0) {
+      printf("Error to convert server ip from text to binary.\n");
+      exit(EXIT_FAILURE);
+  }
+}
+
+void initializeAddressByUser(struct sockaddr_in * address, User user){
+  initializeAddress(user.iPAddress.c_str(), address, user.portNumber);
 }

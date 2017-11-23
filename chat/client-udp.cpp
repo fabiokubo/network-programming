@@ -17,18 +17,6 @@ int create_new_socket(){
     return sockfd;
 }
 
-void initialize_server_address(char * server_ip, struct sockaddr_in * server_address, int portNumber){
-  bzero(server_address, sizeof(* server_address));
-  server_address->sin_family      = AF_INET;
-  server_address->sin_port        = htons(portNumber);
-
-  //Converts server address IP from string to binary and saves in server_address
-  if (inet_pton(AF_INET, server_ip, &(server_address->sin_addr) ) <= 0) {
-      printf("Error to convert server ip from text to binary.\n");
-      exit(EXIT_FAILURE);
-  }
-}
-
 void die(char *s){
     perror(s);
     exit(1);
@@ -51,7 +39,7 @@ void receiveMessageFromServer(int sockfd, char * buf, struct sockaddr * server_a
   printf("%s\n", buf);
 }
 
-void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
+void sendRequestMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
 
   char message[BUFLEN];
 
@@ -64,7 +52,7 @@ void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_ad
   sentMessageToServer(sockfd, message, server_address, slen);
 }
 
-void sentTextMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
+void sendTextMessage(int sockfd, char * message_content, struct sockaddr * server_address, socklen_t slen){
 
   char message[BUFLEN];
 
@@ -72,33 +60,37 @@ void sentTextMessage(int sockfd, char * nickname, struct sockaddr * server_addre
   message[0] = TEXT_MESSAGE;
 
   //copying nickname into first message
-  strcpy(&message[1], nickname);
+  strcpy(&message[1], message_content);
 
   sentMessageToServer(sockfd, message, server_address, slen);
 }
 
-int isExitMessage(char * message) {
-  //fgets function adds \n in string, if is exit command, exit from program
-  return strncmp(message, "exit\n", BUFLEN) == 0;
-}
-
 void printInstructions(){
-  printf("Welcome!\n");
   printf("Instructions:\n");
   printf("- Command to send message: M <nickname> <message_content>\n");
-  printf("- Command to send file: F <nickname> <file_name>\n");
+  printf("- Command to send file: T <nickname> <file_name>\n");
   printf("- Command to exit: exit\n\n");
 }
 
-void processInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen){
+void handleInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen){
 
   //handle exit command
-  if(isExitMessage(buf)){
+  if(strncmp(buf, "exit\n", BUFLEN) == 0){
     close(sockfd);
     printf("Bye bye!\n");
     exit(EXIT_SUCCESS);
   }
 
+  if(buf[0] == 'M') {
+    sendTextMessage(sockfd, &buf[2], server_address, slen);
+  }
+  else if (buf[0] == 'T') {
+    printf("Transfer\n");
+  }
+  else {
+    printf("Invalid command.. Please, try again\n");
+    printInstructions();
+  }
 }
 
 int main(int argc, char **argv)
@@ -111,27 +103,25 @@ int main(int argc, char **argv)
     validate_parameters(argc, argv);
 
     sockfd = create_new_socket();
-    initialize_server_address(argv[1], &server_address, atoi(argv[2]));
+    initializeAddress(argv[1], &server_address, atoi(argv[2]));
 
+    printf("Welcome!\n");
     printInstructions();
 
     printf("Enter your nickname: ");
     fgets(nickname , 50 , stdin);
 
-    sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
+    sendRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
 
     for(;;){
         memset(buf,'\0', BUFLEN);
+        printf("From server: \n");
         receiveMessageFromServer(sockfd, buf, (struct sockaddr *) &server_address, &slen);
 
         memset(buf,'\0', BUFLEN);
+        printf("Digite algo: \n");
         fgets(buf, BUFLEN, stdin);
-
-        processInput(buf, sockfd, (struct sockaddr *)&server_address, slen);
-
-
-
-        sentMessageToServer(sockfd, buf, (struct sockaddr *)&server_address, slen);
+        handleInput(buf, sockfd, (struct sockaddr *)&server_address, slen);
     }
     return 0;
 }
