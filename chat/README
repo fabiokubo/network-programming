@@ -4,8 +4,8 @@ g++ client.c -o client -Wall
 
 or
 
-make
-
+make server
+make client
 
 -> To execute
 
