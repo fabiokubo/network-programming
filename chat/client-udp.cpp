@@ -64,9 +64,41 @@ void sentRequestMessage(int sockfd, char * nickname, struct sockaddr * server_ad
   sentMessageToServer(sockfd, message, server_address, slen);
 }
 
+void sentTextMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
+
+  char message[BUFLEN];
+
+  //first message
+  message[0] = TEXT_MESSAGE;
+
+  //copying nickname into first message
+  strcpy(&message[1], nickname);
+
+  sentMessageToServer(sockfd, message, server_address, slen);
+}
+
 int isExitMessage(char * message) {
   //fgets function adds \n in string, if is exit command, exit from program
   return strncmp(message, "exit\n", BUFLEN) == 0;
+}
+
+void printInstructions(){
+  printf("Welcome!\n");
+  printf("Instructions:\n");
+  printf("- Command to send message: M <nickname> <message_content>\n");
+  printf("- Command to send file: F <nickname> <file_name>\n");
+  printf("- Command to exit: exit\n\n");
+}
+
+void processInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen){
+
+  //handle exit command
+  if(isExitMessage(buf)){
+    close(sockfd);
+    printf("Bye bye!\n");
+    exit(EXIT_SUCCESS);
+  }
+
 }
 
 int main(int argc, char **argv)
@@ -81,16 +113,11 @@ int main(int argc, char **argv)
     sockfd = create_new_socket();
     initialize_server_address(argv[1], &server_address, atoi(argv[2]));
 
-    printf("Welcome!\n");
-    printf("Instructions:\n");
-    printf("- Command to send message: M <nickname> <message_content>\n");
-    printf("- Command to send file: F <nickname> <file_name>\n");
-    printf("- Command to exit: exit\n\n");
+    printInstructions();
 
     printf("Enter your nickname: ");
     fgets(nickname , 50 , stdin);
 
-    printf("Trying to connect with server...\n\n");
     sentRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
 
     for(;;){
@@ -99,11 +126,11 @@ int main(int argc, char **argv)
 
         memset(buf,'\0', BUFLEN);
         fgets(buf, BUFLEN, stdin);
-        if(isExitMessage(buf)){
-          close(sockfd);
-          printf("Bye bye!\n");
-          exit(EXIT_SUCCESS);
-        }
+
+        processInput(buf, sockfd, (struct sockaddr *)&server_address, slen);
+
+
+
         sentMessageToServer(sockfd, buf, (struct sockaddr *)&server_address, slen);
     }
     return 0;

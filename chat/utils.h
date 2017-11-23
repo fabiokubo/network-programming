@@ -1,3 +1,4 @@
+#include<vector>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,8 @@
 
 #define BUFLEN 512  //Max length of buffer
 
+using namespace std;
+
 typedef struct User {
   int portNumber;
   char iPAddress[20];
@@ -22,5 +25,16 @@ typedef struct User {
 
 enum MESSAGE_TYPE {
   REGISTER_USER=33,
-  NORMAL=2
+  TEXT_MESSAGE=32
 };
+
+int getUserIndexByNickname(vector<User> users, char * nickname) {
+  int i;
+
+  for(i = 0; i < users.size(); i++) {
+    if(strcmp(users[i].nickname, nickname) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}

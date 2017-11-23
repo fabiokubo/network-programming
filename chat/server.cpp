@@ -1,11 +1,5 @@
-#include<vector>
 #include "utils.h"
 
-using namespace std;
-
-#define MAX_USERS 10
-
-/*Global variables*/
 //Connected users
 vector<User> users;
 
