@@ -100,7 +100,7 @@ string getMessage(char * buf){
 
 void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
   User newUser;
-  
+
   newUser.portNumber = ntohs(peer_address->sin_port);
   newUser.iPAddress.assign(inet_ntoa(peer_address->sin_addr));
   newUser.portNumberTCP = atoi(getMessage(buf).c_str());
@@ -120,7 +120,7 @@ void handleTextMessage(int sockfd, char * buf){
   userIndex = getUserIndexByNickname(users, getNickname(buf));
   message = getMessage(buf);
 
-  if(userIndex > 0) {
+  if(userIndex >= 0) {
     initializeAddressByUser(&address, users[userIndex]);
     sendMessageToUser(sockfd, message.c_str(), message.length(), (struct sockaddr *) &address, slen);
   }
