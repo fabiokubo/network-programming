@@ -84,22 +84,6 @@ void sendUsersList(int sockfd, struct sockaddr * peer_address, socklen_t slen){
   sendMessageToUser(sockfd, message, strlen(message), peer_address, slen);
 }
 
-void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
-
-  User newUser;
-
-  newUser.portNumber = ntohs(peer_address->sin_port);
-  newUser.iPAddress.assign(inet_ntoa(peer_address->sin_addr));
-
-  buf[recv_len-1] = '\0';
-  newUser.nickname.assign(&buf[1]);
-
-  users.push_back(newUser);
-
-  printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
-  printf("New user added: %s, Address - %s : %d.\n", newUser.nickname.c_str(), newUser.iPAddress.c_str(), newUser.portNumber);
-}
-
 string getNickname(char * buf){
   size_t spacePosition;
   string aux(buf);
@@ -111,8 +95,20 @@ string getMessage(char * buf){
   size_t spacePosition;
   string aux(buf);
   spacePosition = aux.find(" ");
-  printf("%s\n", aux.substr(spacePosition + 1).c_str());
   return aux.substr(spacePosition + 1);
+}
+
+void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
+  User newUser;
+  
+  newUser.portNumber = ntohs(peer_address->sin_port);
+  newUser.iPAddress.assign(inet_ntoa(peer_address->sin_addr));
+  newUser.portNumberTCP = atoi(getMessage(buf).c_str());
+  newUser.nickname.assign(getNickname(buf));
+  users.push_back(newUser);
+
+  printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
+  printf("New user added: %s, Address - %s : %d.\n", newUser.nickname.c_str(), newUser.iPAddress.c_str(), newUser.portNumber);
 }
 
 void handleTextMessage(int sockfd, char * buf){

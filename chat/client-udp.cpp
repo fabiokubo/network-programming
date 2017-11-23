@@ -39,15 +39,21 @@ void receiveMessageFromServer(int sockfd, char * buf, struct sockaddr * server_a
   printf("%s\n", buf);
 }
 
-void sendRequestMessage(int sockfd, char * nickname, struct sockaddr * server_address, socklen_t slen){
+void sendRequestMessage(int sockfd, char * nickname, char * portNumberTCP, struct sockaddr * server_address, socklen_t slen){
 
   char message[BUFLEN];
+  nickname[strlen(nickname)-1] = '\0';
+  portNumberTCP[strlen(portNumberTCP)-1] = '\0';
+  string strNickname(nickname);
+  string strPortNumberTCP(portNumberTCP);
+  string message_content;
 
   //first message
   message[0] = REGISTER_USER;
 
-  //copying nickname into first message
-  strcpy(&message[1], nickname);
+  //setting nickname and portNumberTCP
+  message_content = strNickname + " " + strPortNumberTCP;
+  strcpy(&message[1], message_content.c_str());
 
   sentMessageToServer(sockfd, message, server_address, slen);
 }
@@ -98,7 +104,8 @@ int main(int argc, char **argv)
     struct sockaddr_in server_address;
     socklen_t slen=sizeof(server_address);
     int sockfd;
-    char buf[BUFLEN], nickname[50];
+    char buf[BUFLEN], nickname[50], portNumberTCP[10];
+    vector<User> users;
 
     validate_parameters(argc, argv);
 
@@ -111,7 +118,10 @@ int main(int argc, char **argv)
     printf("Enter your nickname: ");
     fgets(nickname , 50 , stdin);
 
-    sendRequestMessage(sockfd, nickname, (struct sockaddr *) &server_address, slen);
+    printf("Enter a port Number to TCP communication: ");
+    fgets(portNumberTCP , 10 , stdin);
+
+    sendRequestMessage(sockfd, nickname, portNumberTCP, (struct sockaddr *) &server_address, slen);
 
     for(;;){
         memset(buf,'\0', BUFLEN);

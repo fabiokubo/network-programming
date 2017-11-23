@@ -21,6 +21,7 @@ using namespace std;
 
 typedef struct User {
   int portNumber;
+  int portNumberTCP;
   string iPAddress;
   string nickname;
 } User;
