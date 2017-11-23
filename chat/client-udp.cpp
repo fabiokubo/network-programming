@@ -55,6 +55,9 @@ void sendTextMessage(int sockfd, char * message_content, struct sockaddr * serve
   //first message
   message[0] = TEXT_MESSAGE;
 
+  //remove \n
+  message_content[strlen(message_content) - 1] = '\0';
+
   //copying nickname into first message
   strcpy(&message[1], message_content);
 

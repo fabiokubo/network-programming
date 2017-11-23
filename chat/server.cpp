@@ -3,29 +3,33 @@
 //Connected users
 vector<User> users;
 
-void log_connection_file(struct sockaddr_in * peer_address) {
+void log_message(string ipSender, int portNumberSender, char * ipReceiver, int portNumberReceiver, string message) {
   FILE *fp;
-  char str[INET_ADDRSTRLEN];
-
   fp = fopen ("log.txt", "a");
+  printf("Nova mensagem de %s:%d para %s:%d - Conteudo: %s. Unix timestamp: %lu.\n", ipSender.c_str(), portNumberSender,
+    ipReceiver, portNumberReceiver, message.c_str(), (unsigned long)time(NULL));
 
-  inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
-  printf("%s:%d connected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
-  fprintf(fp, "%s:%d connected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
-
+  fprintf(fp, "Nova mensagem de %s:%d para %s:%d - Conteudo: %s. Unix timestamp: %lu.\n", ipSender.c_str(), portNumberSender,
+    ipReceiver, portNumberReceiver, message.c_str(), (unsigned long)time(NULL));
   fclose(fp);
 }
 
-void log_disconnection_file(struct sockaddr_in * peer_address) {
+void log_enter(string nickname, string ipAddress, int portNumber) {
   FILE *fp;
-  char str[INET_ADDRSTRLEN];
-
   fp = fopen ("log.txt", "a");
+  printf("Novo usario %s de ip %s e porta numero %d entrou na sala. Unix timestamp: %lu.\n", nickname.c_str(),
+   ipAddress.c_str(), portNumber, (unsigned long)time(NULL));
 
-  inet_ntop(AF_INET, &(peer_address->sin_addr), str, INET_ADDRSTRLEN);
-  printf("%s:%d disconnected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
-  fprintf(fp, "%s:%d disconnected. Unix timestamp: %lu.\n", str, ntohs(peer_address->sin_port), (unsigned long)time(NULL));
+  fprintf(fp, "Novo usario %s de ip %s e porta numero %d entrou na sala. Unix timestamp: %lu.\n", nickname.c_str(),
+   ipAddress.c_str(), portNumber, (unsigned long)time(NULL));
+  fclose(fp);
+}
 
+void log_exit(string nickname) {
+  FILE *fp;
+  fp = fopen ("log.txt", "a");
+  printf("%s saiu da sala. Unix timestamp: %lu.\n", nickname.c_str(), (unsigned long)time(NULL));
+  fprintf(fp, "%s saiu da sala. Unix timestamp: %lu.\n", nickname.c_str(), (unsigned long)time(NULL));
   fclose(fp);
 }
 
@@ -95,31 +99,35 @@ void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
   newUser.portNumberTCP = atoi(getMessage(buf).c_str());
   newUser.nickname.assign(getNickname(buf));
   users.push_back(newUser);
-
-  printf("Received packet from %s:%d\n", inet_ntoa(peer_address->sin_addr), ntohs(peer_address->sin_port));
-  printf("New user added: %s, Address - %s : %d.\n", newUser.nickname.c_str(), newUser.iPAddress.c_str(), newUser.portNumber);
+  log_enter(newUser.nickname, newUser.iPAddress, newUser.portNumber);
 }
 
-void handleTextMessage(int sockfd, char * buf){
+void handleTextMessage(int sockfd, struct sockaddr_in * sender_address, char * buf){
   int userIndex;
   string message;
   struct sockaddr_in address;
   socklen_t slen=sizeof(address);
+  char str[INET_ADDRSTRLEN];
 
   userIndex = getUserIndexByNickname(users, getNickname(buf));
   message = getMessage(buf);
 
   if(userIndex >= 0) {
+
+    inet_ntop(AF_INET, &(sender_address->sin_addr), str, INET_ADDRSTRLEN);
+    log_message(users[userIndex].iPAddress, users[userIndex].portNumber, str, ntohs(sender_address->sin_port), message);
+
     initializeAddressByUser(&address, users[userIndex]);
     sendMessageToUser(sockfd, message.c_str(), message.length(), (struct sockaddr *) &address, slen);
   }
 }
 
 void handleExit(char * buf){
-
   int userIndex = getUserIndexByNickname(users, getNickname(buf));
+
   if(userIndex >= 0){
-      users.erase(users.begin() + userIndex);
+    log_exit(users[userIndex].nickname);
+    users.erase(users.begin() + userIndex);
   }
 }
 
@@ -131,7 +139,7 @@ void processMessage(int sockfd, char * buf, int recv_len, struct sockaddr * peer
       sendUsersList(sockfd, peer_address, slen);
       break;
     case TEXT_MESSAGE:
-      handleTextMessage(sockfd, buf);
+      handleTextMessage(sockfd, (struct sockaddr_in *) peer_address, buf);
       break;
     case EXIT_MESSAGE:
       handleExit(buf);
@@ -177,8 +185,8 @@ int main(int argc, char **argv){
       recv_len = receiveMessageFromUser(sockfd, buf, (struct sockaddr *) &peer_address, &slen);
 
       //print details of the client/peer and the data received
-      printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
-      printf("Data: %s\n" , buf);
+      //printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
+      //printf("Data: %s\n" , buf);
   }
 
   return 0;
