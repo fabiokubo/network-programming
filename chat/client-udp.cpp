@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "utils.hpp"
 
 void validate_parameters(int argc, char **argv){
     if (argc != 3) {
