@@ -57,3 +57,13 @@ void initializeAddress(const char * server_ip, struct sockaddr_in * address, int
 void initializeAddressByUser(struct sockaddr_in * address, User user){
   initializeAddress(user.iPAddress.c_str(), address, user.portNumber);
 }
+
+int createNewSocket(){
+    //Creates a new socket
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) {
+       printf("Failed to create new socket.");
+       exit(EXIT_FAILURE);
+    }
+    return sockfd;
+}

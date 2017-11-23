@@ -7,16 +7,6 @@ void validate_parameters(int argc, char **argv){
     }
 }
 
-int create_new_socket(){
-    //Creates a new socket
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) {
-       printf("Failed to create new socket.");
-       exit(EXIT_FAILURE);
-    }
-    return sockfd;
-}
-
 void die(char *s){
     perror(s);
     exit(1);
@@ -109,7 +99,7 @@ int main(int argc, char **argv)
 
     validate_parameters(argc, argv);
 
-    sockfd = create_new_socket();
+    sockfd = createNewSocket();
     initializeAddress(argv[1], &server_address, atoi(argv[2]));
 
     printf("Welcome!\n");

@@ -36,17 +36,6 @@ void validate_args(int argc, char **argv){
     }
 }
 
-int create_new_socket(){
-  int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-  if ( sockfd < 0) {
-     printf("Error in method create_new_socket.\n");
-     exit(EXIT_FAILURE);
-  }
-
-  return sockfd;
-}
-
 void initialize_server_address(struct sockaddr_in * server_address, int portNumber){
   bzero(server_address, sizeof(* server_address));
   server_address->sin_family      = AF_INET;
@@ -161,7 +150,7 @@ int main(int argc, char **argv){
   printf("Starting server...\n");
 
   validate_args(argc, argv);
-  sockfd = create_new_socket();
+  sockfd = createNewSocket();
   initialize_server_address(&server_address, atoi(argv[1]));
   bind_name_to_socket((struct sockaddr *) &server_address, sockfd);
 
