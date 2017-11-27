@@ -45,6 +45,17 @@ int getUserIndexByNickname(vector<User> users, string nickname) {
     return -1;
 }
 
+// Returns the index of user with given IP
+int getUserIndexByIP(vector<User> users, string ip) {
+    int i;
+    for(i = 0; i < users.size(); i++) {
+        if(users[i].iPAddress == ip) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 // Populates the struct sockaddr_in with informations such as server IP
 //(converted to binary), port and socket connection type
 void initializeAddress(const char * server_ip, struct sockaddr_in * address, int portNumber){

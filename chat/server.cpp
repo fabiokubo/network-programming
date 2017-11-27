@@ -103,7 +103,6 @@ void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
     int i;
     User newUser;
     i = getUserIndexByNickname(users, getNickname(buf));
-    printf("huehuehuheuhue %d\n", i);
     if (i>=0){
         users[i].portNumber = ntohs(peer_address->sin_port);
         users[i].iPAddress.assign(inet_ntoa(peer_address->sin_addr));
@@ -125,8 +124,13 @@ void handleTextMessage(int sockfd, struct sockaddr_in * sender_address, char * b
     struct sockaddr_in address;
     socklen_t slen=sizeof(address);
     char str[INET_ADDRSTRLEN];
-    int userIndex = getUserIndexByNickname(users, getNickname(buf));;
     string message = getMessage(buf);
+    int userIndex;
+
+    userIndex = getUserIndexByNickname(users, getNickname(buf));;
+    if(userIndex < 0) {
+        userIndex = getUserIndexByIP(users, getNickname(buf));;
+    }
 
     if(userIndex >= 0) {
         inet_ntop(AF_INET, &(sender_address->sin_addr), str, INET_ADDRSTRLEN);
