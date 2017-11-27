@@ -100,13 +100,24 @@ string getMessage(char * buf){
 
 // Creates a new user struct and populates it with received info
 void addNewUser(char * buf, int recv_len, struct sockaddr_in * peer_address){
-    User newUser; //<----
-    newUser.portNumber = ntohs(peer_address->sin_port);
-    newUser.iPAddress.assign(inet_ntoa(peer_address->sin_addr));
-    newUser.portNumberTCP = atoi(getMessage(buf).c_str());
-    newUser.nickname.assign(getNickname(buf));
-    users.push_back(newUser);
-    log_enter(newUser.nickname, newUser.iPAddress, newUser.portNumber);
+    int i;
+    User newUser;
+    i = getUserIndexByNickname(users, getNickname(buf));
+    printf("huehuehuheuhue %d\n", i);
+    if (i>=0){
+        users[i].portNumber = ntohs(peer_address->sin_port);
+        users[i].iPAddress.assign(inet_ntoa(peer_address->sin_addr));
+        users[i].portNumberTCP = atoi(getMessage(buf).c_str());
+        users[i].nickname.assign(getNickname(buf));
+        log_enter(users[i].nickname, users[i].iPAddress, users[i].portNumber);
+    }else{
+        newUser.portNumber = ntohs(peer_address->sin_port);
+        newUser.iPAddress.assign(inet_ntoa(peer_address->sin_addr));
+        newUser.portNumberTCP = atoi(getMessage(buf).c_str());
+        newUser.nickname.assign(getNickname(buf));
+        users.push_back(newUser);
+        log_enter(newUser.nickname, newUser.iPAddress, newUser.portNumber);
+    }
 }
 
 // Gets the destination user and sends to it given message
