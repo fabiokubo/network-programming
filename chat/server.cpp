@@ -144,16 +144,17 @@ void provide_transfer_info(int sockfd, struct sockaddr_in * sender_address, char
     }
 
     if(userIndex >= 0) {
+        printf("BIRLLLL %d %s\n", userIndex, users.at(userIndex).iPAddress.c_str());
         //
         string text = get_message(buf);
         message[0] = TRANSFER_MESSAGE;
         message_content = users[userIndex].iPAddress + " " + std::to_string(users[userIndex].portNumberTCP);
         strcpy(&message[1], message_content.c_str());
         //
-        inet_ntop(AF_INET, &(sender_address->sin_addr), str, INET_ADDRSTRLEN);
-        log_message(users[userIndex].iPAddress, users[userIndex].portNumber, str, ntohs(sender_address->sin_port), message);
+        //inet_ntop(AF_INET, &(sender_address->sin_addr), str, INET_ADDRSTRLEN);
+        //log_message(users[userIndex].iPAddress, users[userIndex].portNumber, str, ntohs(sender_address->sin_port), message);
         //initialize_address_by_user(&address, users[userIndex]);
-        send_message_to_user(sockfd, message, sizeof(message), (struct sockaddr *) &address, slen);
+        send_message_to_user(sockfd, message, sizeof(message), (struct sockaddr *) sender_address, slen);
 
     }
 }

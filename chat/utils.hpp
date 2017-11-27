@@ -70,6 +70,10 @@ string get_nickname(char * buf){
     spacePosition = aux.find(" ");
     return aux.substr(1, spacePosition - 1);
 }
+// Finds the ip address by parsing the buffer
+string get_ip_address(char * buf){
+    return get_nickname(buf);
+}
 
 // Finds the message by parsing the buffer
 string get_message(char * buf){
@@ -77,6 +81,10 @@ string get_message(char * buf){
     string aux(buf);
     spacePosition = aux.find(" ");
     return aux.substr(spacePosition + 1);
+}
+// Finds the message by parsing the buffer
+string get_tcp_port(char * buf){
+    return get_message(buf);
 }
 
 // Populates the struct sockaddr_in with informations such as server IP

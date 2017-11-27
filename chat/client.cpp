@@ -1,5 +1,7 @@
 #include "utils.hpp"
 
+string filePath;
+
 // Validates number of paramenters
 void validate_parameters(int argc, char **argv){
     if (argc != 3) {
@@ -93,7 +95,7 @@ void print_instructions(){
     printf("- Command to send message: M <nickname> <message_content>\n");
     printf("- Command to send file: T <nickname> <file_name>\n");
     printf("- Command to list users: L\n");
-    printf("- Command to change nickname: N <nickname>\n");
+    printf("- Command to change nickname: N\n");
     printf("- Command to exit: exit\n\n");
 }
 
@@ -105,7 +107,11 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
     }
     // Handle file transfer command
     else if (buf[0] == 'T') {
-        printf("Transfer\n"); //<-----
+        string user = get_nickname(&buf[1]);
+        string path = get_message(&buf[1]);
+        filePath = path;
+        printf("ueva %s\n", filePath.c_str());
+        send_transfer_message(sockfd, const_cast<char*>(user.c_str()), server_address, slen);
     }
     // Handle list users command
     else if(buf[0] == 'L') {
@@ -136,17 +142,18 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
 //
 void handle_response_type(char *buf){
     // Handle message response
-    if(buf[0] == 'M') {
+    if(buf[0] == TEXT_MESSAGE) {
         printf("\rFrom server: %s\n", buf[1]);
         fflush(stdout);
         printf("> ");
         fflush(stdout);
     }
     // Handle file transfer response
-    else if (buf[0] == 'T') {
-        string iPAddress = get_nickname(buf);
-        string TCPport = get_message(buf);
-        printf("Obtained infos for transfer: ip %s and port %s\n", iPAddress, TCPport);
+    else if (buf[0] == TRANSFER_MESSAGE) {
+        string iPAddress = get_ip_address(buf);
+        string TCPport = get_tcp_port(buf);
+        printf("Obtained infos for transfer: ip %s and port %s and path is %s\n",
+            iPAddress.c_str(), TCPport.c_str(), filePath.c_str());
         fflush(stdout);
     }
 }
@@ -197,8 +204,8 @@ int main(int argc, char **argv){
         for(;;){
             memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
             receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-
-
+            printf("OOOOOWWW CHEGOU\n");
+            handle_response_type(bufServer);
         }
     }
 
