@@ -32,10 +32,17 @@ enum MESSAGE_TYPE {
     TEXT_MESSAGE=34,
     EXIT_MESSAGE=35,
     LIST_MESSAGE=36,
+    TRANSFER_MESSAGE=37
 };
 
+// Exit program throwing an error message
+void die(string s){
+    perror(s.c_str());
+    exit(1);
+}
+
 // Returns the index of user with given nickname
-int getUserIndexByNickname(vector<User> users, string nickname) {
+int get_user_index_by_nickname(vector<User> users, string nickname) {
     int i;
     for(i = 0; i < users.size(); i++) {
         if(users[i].nickname == nickname) {
@@ -46,7 +53,7 @@ int getUserIndexByNickname(vector<User> users, string nickname) {
 }
 
 // Returns the index of user with given IP
-int getUserIndexByIP(vector<User> users, string ip) {
+int get_user_index_by_ip(vector<User> users, string ip) {
     int i;
     for(i = 0; i < users.size(); i++) {
         if(users[i].iPAddress == ip) {
@@ -56,9 +63,25 @@ int getUserIndexByIP(vector<User> users, string ip) {
     return -1;
 }
 
+// Finds the nickname by parsing the buffer
+string get_nickname(char * buf){
+    size_t spacePosition;
+    string aux(buf);
+    spacePosition = aux.find(" ");
+    return aux.substr(1, spacePosition - 1);
+}
+
+// Finds the message by parsing the buffer
+string get_message(char * buf){
+    size_t spacePosition;
+    string aux(buf);
+    spacePosition = aux.find(" ");
+    return aux.substr(spacePosition + 1);
+}
+
 // Populates the struct sockaddr_in with informations such as server IP
 //(converted to binary), port and socket connection type
-void initializeAddress(const char * server_ip, struct sockaddr_in * address, int portNumber){
+void initialize_address(const char * server_ip, struct sockaddr_in * address, int portNumber){
     bzero(address, sizeof(* address));
     address->sin_family      = AF_INET;
     address->sin_port        = htons(portNumber);
@@ -70,23 +93,15 @@ void initializeAddress(const char * server_ip, struct sockaddr_in * address, int
 }
 
 // Populates the struct sockaddr_in with user informations
-void initializeAddressByUser(struct sockaddr_in * address, User user){
-    initializeAddress(user.iPAddress.c_str(), address, user.portNumber);
+void initialize_address_by_user(struct sockaddr_in * address, User user){
+    initialize_address(user.iPAddress.c_str(), address, user.portNumber);
 }
 
 //Creates a new socket and returns its descriptor
-int createNewSocket(){
+int create_new_socket(){
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
-       printf("Failed to create new socket.");
-       exit(EXIT_FAILURE);
+       die("Failed to create new socket.");
     }
     return sockfd;
-}
-
-
-// Exit program throwing an error message
-void die(string s){
-    perror(s.c_str());
-    exit(1);
 }

@@ -5,9 +5,9 @@
 
  - socklen_t might not be necessary if you use sizeof(address). Currently evaluating...
 
- - Standardize functions names
+ - Standardize functions names //////////////////////////////////////////////////////
 
- -> If user already exists, update its info
+ -> If user already exists, update its info /////////////////////////////////////////
 
  -> die() should be on utils.hpp and be used by the server //////////////////////////
 

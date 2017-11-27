@@ -10,21 +10,21 @@ void validate_parameters(int argc, char **argv){
 
 // Sends a message to the server using given socket, message, sockaddr struct
 //and its length
-void sendMessageToServer(int sockfd, char * message, struct sockaddr * server_address, socklen_t slen){
+void send_message_to_server(int sockfd, char * message, struct sockaddr * server_address, socklen_t slen){
     if (sendto(sockfd, message, strlen(message) , 0 , server_address, slen)==-1){
         die("Error: sendto() method.\n");
     }
 }
 
 // Receives message from server
-void receiveMessageFromServer(int sockfd, char * buf, struct sockaddr * server_address, socklen_t * slen){
+void receive_message_from_server(int sockfd, char * buf, struct sockaddr * server_address, socklen_t * slen){
     if (recvfrom(sockfd, buf, BUFLEN, 0, server_address, slen) == -1){
         die("Error: recvfrom() method.\n");
     }
 }
 
 // Create user registration message to server
-void sendRegisterMessage(int sockfd, char * nickname, char * portNumberTCP, struct sockaddr * server_address, socklen_t slen){
+void send_register_message(int sockfd, char * nickname, char * portNumberTCP, struct sockaddr * server_address, socklen_t slen){
     char message[BUFLEN];
     nickname[strlen(nickname)-1] = '\0';
     portNumberTCP[strlen(portNumberTCP)-1] = '\0';
@@ -37,33 +37,46 @@ void sendRegisterMessage(int sockfd, char * nickname, char * portNumberTCP, stru
     message_content = strNickname + " " + strPortNumberTCP;
     strcpy(&message[1], message_content.c_str());
     //send message
-    sendMessageToServer(sockfd, message, server_address, slen);
+    send_message_to_server(sockfd, message, server_address, slen);
 }
 
 // Creates a message containing a text message and sends it
-void sendTextMessage(int sockfd, char * message_content, struct sockaddr * server_address, socklen_t slen){
+void send_text_message(int sockfd, char * message_content, struct sockaddr * server_address, socklen_t slen){
     char message[BUFLEN];
     //first message
     message[0] = TEXT_MESSAGE;
-    //remove \n
-    //message_content[strlen(message_content) - 1] = '\0';
     //copying nickname into first message
     strcpy(&message[1], message_content);
     //send message
-    sendMessageToServer(sockfd, message, server_address, slen);
+    send_message_to_server(sockfd, message, server_address, slen);
 }
 
 // Creates a message containing a text message and sends it
-void sendListMessage(int sockfd, struct sockaddr * server_address, socklen_t slen){
+void send_list_message(int sockfd, struct sockaddr * server_address, socklen_t slen){
     char message[BUFLEN];
     //first message
     message[0] = LIST_MESSAGE;
     //send message
-    sendMessageToServer(sockfd, message, server_address, slen);
+    send_message_to_server(sockfd, message, server_address, slen);
+}
+
+// Creates a message containing a file transfer request and sends it
+void send_transfer_message(int sockfd, char * user, struct sockaddr * server_address, socklen_t slen){
+    char message[BUFLEN];
+    string strUser(user);
+    string message_content;
+    //first message
+    message[0] = TRANSFER_MESSAGE;
+    //setting nickname and portNumberTCP
+    message_content = strUser + " ";
+    //copying nickname into first message
+    strcpy(&message[1], message_content.c_str());
+    //send message
+    send_message_to_server(sockfd, message, server_address, slen);
 }
 
 //
-void sendExitMessage(int sockfd, struct sockaddr * server_address, socklen_t slen, char * nickname){
+void send_exit_message(int sockfd, struct sockaddr * server_address, socklen_t slen, char * nickname){
 
     char message[BUFLEN];
 
@@ -71,11 +84,11 @@ void sendExitMessage(int sockfd, struct sockaddr * server_address, socklen_t sle
     message[0] = EXIT_MESSAGE;
     strcpy(&message[1], nickname);
 
-    sendMessageToServer(sockfd, message, server_address, slen);
+    send_message_to_server(sockfd, message, server_address, slen);
 }
 
 // Print instructions regarding possible commands
-void printInstructions(){
+void print_instructions(){
     printf("\nInstructions:\n");
     printf("- Command to send message: M <nickname> <message_content>\n");
     printf("- Command to send file: T <nickname> <file_name>\n");
@@ -85,10 +98,10 @@ void printInstructions(){
 }
 
 // Switches between possible commands and execute them
-void handleInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen, char * nickname){
+void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address, socklen_t slen, char * nickname){
     // Handle message sending command
     if(buf[0] == 'M') {
-        sendTextMessage(sockfd, &buf[2], server_address, slen);
+        send_text_message(sockfd, &buf[2], server_address, slen);
     }
     // Handle file transfer command
     else if (buf[0] == 'T') {
@@ -96,22 +109,45 @@ void handleInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address,
     }
     // Handle list users command
     else if(buf[0] == 'L') {
-        sendListMessage(sockfd, server_address, slen);
+        send_list_message(sockfd, server_address, slen);
     }
     // Handle user updating command
     else if(buf[0] == 'N') {
-        //sendTextMessage(sockfd, &buf[2], server_address, slen);
+        char nickname[50], portNumberTCP[10];
+        printf("Enter your nickname: ");
+        fgets(nickname , 50 , stdin);
+        printf("Enter a port Number to TCP communication: ");
+        fgets(portNumberTCP , 10 , stdin);
+        send_register_message(sockfd, nickname, portNumberTCP, (struct sockaddr *) &server_address, slen);
     }
     // Handle exit command
     else if(strncmp(buf, "exit\n", BUFLEN) == 0){
-        sendExitMessage(sockfd, server_address, slen, nickname); // <-----
+        send_exit_message(sockfd, server_address, slen, nickname); // <-----
         close(sockfd);
         printf("Bye bye!\n");
         exit(EXIT_SUCCESS);
     }
     else {
         printf("Invalid command.. Please, try again\n");
-        printInstructions();
+        print_instructions();
+    }
+}
+
+//
+void handle_response_type(char *buf){
+    // Handle message response
+    if(buf[0] == 'M') {
+        printf("\rFrom server: %s\n", buf[1]);
+        fflush(stdout);
+        printf("> ");
+        fflush(stdout);
+    }
+    // Handle file transfer response
+    else if (buf[0] == 'T') {
+        string iPAddress = get_nickname(buf);
+        string TCPport = get_message(buf);
+        printf("Obtained infos for transfer: ip %s and port %s\n", iPAddress, TCPport);
+        fflush(stdout);
     }
 }
 
@@ -125,23 +161,22 @@ int main(int argc, char **argv){
 
     validate_parameters(argc, argv);
 
-    sockfd = createNewSocket();
-    initializeAddress(argv[1], &server_address, atoi(argv[2]));
+    sockfd = create_new_socket();
+    initialize_address(argv[1], &server_address, atoi(argv[2]));
 
     printf("Welcome!\n");
     printf("Enter your nickname: ");
     fgets(nickname , 50 , stdin);
-
     printf("Enter a port Number to TCP communication: ");
     fgets(portNumberTCP , 10 , stdin);
 
-    printInstructions();
+    print_instructions();
 
-    sendRegisterMessage(sockfd, nickname, portNumberTCP, (struct sockaddr *) &server_address, slen);
+    send_register_message(sockfd, nickname, portNumberTCP, (struct sockaddr *) &server_address, slen);
 
     //receive list of users
     memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
-    receiveMessageFromServer(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
+    receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
     printf("%s\n", bufServer);
     printf("Type your commands: \n> ");
 
@@ -153,7 +188,7 @@ int main(int argc, char **argv){
         for(;;){
             memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
             fgets(bufUser, BUFLEN, stdin);
-            handleInput(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
+            handle_input(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
             printf("\n> ");
         }
     }
@@ -161,11 +196,9 @@ int main(int argc, char **argv){
         //listens to server
         for(;;){
             memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
-            receiveMessageFromServer(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-            printf("\rFrom server: %s\n", bufServer);
-            fflush(stdout);
-            printf("> ", bufServer);
-            fflush(stdout);
+            receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
+
+
         }
     }
 
