@@ -1,20 +1,14 @@
 
--> Bate Papo UDP
-    -> Criar servidor UDP
-    -> Criar cliente UDP
+ => Create TCP connection between users to transmit file
 
--> Criar concorrência do servidor
+ - Might be better to move initializeAddress() to client.cpp. Currently evaluating...
 
--> O cliente deve acessar o servidor tanto pelo nome quanto pelo endereço IP
-passados na linha de comando
+ - socklen_t might not be necessary if you use sizeof(address). Currently evaluating...
 
--> Transferência de arquivos TCP
-    -> Implementar transferência TCP entre clientes
+ - Standardize functions names
 
--> Criar lista de usuários conectados com nickname
+ -> If user already exists, update its info
 
--> Implementar escolha de com quem conversar
+ -> die() should be on utils.hpp and be used by the server
 
--> Desconectar do servidor
-
--> Implementar log de eventos no servidor
+ - Client should always listen and wait for input, at the same time (thread) ////////
