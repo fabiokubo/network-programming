@@ -9,6 +9,6 @@
 
  -> If user already exists, update its info
 
- -> die() should be on utils.hpp and be used by the server
+ -> die() should be on utils.hpp and be used by the server //////////////////////////
 
  - Client should always listen and wait for input, at the same time (thread) ////////

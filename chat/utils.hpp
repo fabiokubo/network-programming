@@ -34,18 +34,6 @@ enum MESSAGE_TYPE {
     LIST_MESSAGE=36,
 };
 
-//
-void print(string str){
-    char *msg;
-    strcpy(msg, str.c_str());
-    printf("%s",msg);
-    printf("%s",str);
-    printf("PORRA BIXO",str);
-    printf("PORRA BIXO",str);
-    printf("PORRA BIXO",str);
-    //write(1, msg, sizeof(msg)-1);
-}
-
 // Returns the index of user with given nickname
 int getUserIndexByNickname(vector<User> users, string nickname) {
     int i;
@@ -83,4 +71,11 @@ int createNewSocket(){
        exit(EXIT_FAILURE);
     }
     return sockfd;
+}
+
+
+// Exit program throwing an error message
+void die(string s){
+    perror(s.c_str());
+    exit(1);
 }

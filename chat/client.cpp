@@ -8,27 +8,18 @@ void validate_parameters(int argc, char **argv){
     }
 }
 
-// Exit program throwing an error message
-void die(string s){
-    perror(s.c_str());
-    exit(1);
-}
-
 // Sends a message to the server using given socket, message, sockaddr struct
 //and its length
 void sendMessageToServer(int sockfd, char * message, struct sockaddr * server_address, socklen_t slen){
     if (sendto(sockfd, message, strlen(message) , 0 , server_address, slen)==-1){
-        die("sendto()");
-        //printf("Error: sendto() method.\n");
-        //exit(EXIT_FAILURE);
+        die("Error: sendto() method.\n");
     }
 }
 
 // Receives message from server
 void receiveMessageFromServer(int sockfd, char * buf, struct sockaddr * server_address, socklen_t * slen){
     if (recvfrom(sockfd, buf, BUFLEN, 0, server_address, slen) == -1){
-        printf("Error: recvfrom() method.\n");
-        exit(EXIT_FAILURE);
+        die("Error: recvfrom() method.\n");
     }
 }
 
@@ -55,9 +46,18 @@ void sendTextMessage(int sockfd, char * message_content, struct sockaddr * serve
     //first message
     message[0] = TEXT_MESSAGE;
     //remove \n
-    message_content[strlen(message_content) - 1] = '\0';
+    //message_content[strlen(message_content) - 1] = '\0';
     //copying nickname into first message
     strcpy(&message[1], message_content);
+    //send message
+    sendMessageToServer(sockfd, message, server_address, slen);
+}
+
+// Creates a message containing a text message and sends it
+void sendListMessage(int sockfd, struct sockaddr * server_address, socklen_t slen){
+    char message[BUFLEN];
+    //first message
+    message[0] = LIST_MESSAGE;
     //send message
     sendMessageToServer(sockfd, message, server_address, slen);
 }
@@ -96,7 +96,7 @@ void handleInput(char buf[BUFLEN], int sockfd, struct sockaddr * server_address,
     }
     // Handle list users command
     else if(buf[0] == 'L') {
-        //sendTextMessage(sockfd, &buf[2], server_address, slen);
+        sendListMessage(sockfd, server_address, slen);
     }
     // Handle user updating command
     else if(buf[0] == 'N') {
@@ -143,6 +143,7 @@ int main(int argc, char **argv){
     memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
     receiveMessageFromServer(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
     printf("%s\n", bufServer);
+    printf("Type your commands: \n> ");
 
     fflush(stdout);
     process_id = fork();
@@ -151,10 +152,9 @@ int main(int argc, char **argv){
         //listens to user's commands
         for(;;){
             memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
-            printf("Type something: ");
             fgets(bufUser, BUFLEN, stdin);
             handleInput(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
-            printf("\n");
+            printf("\n> ");
         }
     }
     else{ //if is child fork
@@ -162,10 +162,10 @@ int main(int argc, char **argv){
         for(;;){
             memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
             receiveMessageFromServer(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
+            printf("\rFrom server: %s\n", bufServer);
             fflush(stdout);
-            printf("\n\nFrom server: %s", bufServer);
+            printf("> ", bufServer);
             fflush(stdout);
-            printf("\n\nType something: ");
         }
     }
 

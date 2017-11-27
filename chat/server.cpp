@@ -57,8 +57,7 @@ void initialize_server_address(struct sockaddr_in * server_address, int portNumb
 void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
     int bind_result = bind(sockfd, servaddr, sizeof(* servaddr));
     if (bind_result < 0) {
-        printf("Error in method bind_name_to_socket.\n");
-        exit(EXIT_FAILURE);
+        die("Error in method bind_name_to_socket.\n");
     }
 }
 
@@ -66,8 +65,7 @@ void bind_name_to_socket(struct sockaddr * servaddr, int sockfd){
 //struct and its length
 void sendMessageToUser(int sockfd, const char * buf, int recv_len, struct sockaddr * peer_address, socklen_t slen){
     if (sendto(sockfd, buf, recv_len, 0, peer_address, slen) == -1){
-        printf("Error: sending message.\n"); // <-----
-        exit(EXIT_FAILURE);
+        die("Error: sending message.\n"); // <-----
     }
 }
 
