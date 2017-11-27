@@ -14,6 +14,8 @@
 #include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
+
 
 #define BUFLEN 512  //Max length of buffer
 
@@ -25,6 +27,12 @@ typedef struct User {
   string iPAddress;
   string nickname;
 } User;
+
+struct arg_struct {
+    int arg1;
+    struct sockaddr_in *arg2;
+    char *arg3;
+};
 
 // Message codes
 enum MESSAGE_TYPE {

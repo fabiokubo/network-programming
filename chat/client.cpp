@@ -158,12 +158,38 @@ void handle_response_type(char *buf){
     }
 }
 
+void input_loop(int sockfd, struct sockaddr_in *server_address, char *nickname){
+    char bufUser[BUFLEN];
+    socklen_t slen=sizeof(server_address);
+    for(;;){
+        memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
+        fgets(bufUser, BUFLEN, stdin);
+        handle_input(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
+        printf("\n> ");
+    }
+}
+
+void* response_loop(void *arguments){
+    struct arg_struct *args = (struct arg_struct *)arguments;
+    int sockfd =  args->arg1;
+    struct sockaddr_in *server_address = (struct sockaddr_in *) args->arg2;
+    char *bufServer = args->arg3;
+    socklen_t slen=sizeof(*server_address);
+    for(;;){
+        memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
+        receive_message_from_server(sockfd, bufServer, (struct sockaddr *) server_address, &slen);
+        printf("OOOOOWWW CHEGOU\n");
+        handle_response_type(bufServer);
+    }
+}
+
 int main(int argc, char **argv){
-    pid_t process_id;
+    pthread_t listener;
+    char bufServer[BUFLEN];
     struct sockaddr_in server_address;
     socklen_t slen=sizeof(server_address);
     int sockfd;
-    char bufServer[BUFLEN], bufUser[BUFLEN], nickname[50], portNumberTCP[10];
+    char nickname[50], portNumberTCP[10];
     vector<User> users;
 
     validate_parameters(argc, argv);
@@ -186,28 +212,20 @@ int main(int argc, char **argv){
     receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
     printf("%s\n", bufServer);
     printf("Type your commands: \n> ");
-
     fflush(stdout);
-    process_id = fork();
 
-    if(process_id != 0) {//if is main fork
-        //listens to user's commands
-        for(;;){
-            memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
-            fgets(bufUser, BUFLEN, stdin);
-            handle_input(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
-            printf("\n> ");
-        }
+
+
+    struct arg_struct args;
+    args.arg1 = sockfd;
+    args.arg2 = &server_address;
+    if(pthread_create(&listener, NULL, response_loop, &args)) {
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
     }
-    else{ //if is child fork
-        //listens to server
-        for(;;){
-            memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
-            receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-            printf("OOOOOWWW CHEGOU\n");
-            handle_response_type(bufServer);
-        }
-    }
+
+
+    input_loop(sockfd, &server_address, nickname);
 
 
     return 0;
