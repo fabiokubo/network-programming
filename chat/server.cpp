@@ -82,9 +82,7 @@ void send_users_list(int sockfd, struct sockaddr * peer_address, socklen_t slen)
         n = sprintf(aux, "%d - %s\n", i, users[i].nickname.c_str());
         aux += n;
     }
-    printf("eeeeeeeee %s\n", message);
     send_message_to_user(sockfd, message, strlen(message), peer_address, slen);
-    printf("Sent\n");
 }
 
 // Creates a new user struct and populates it with received info
@@ -140,11 +138,16 @@ void provide_transfer_info(int sockfd, struct sockaddr_in * sender_address, char
     char str[INET_ADDRSTRLEN], message[BUFLEN];
     string message_content;
     int userIndex;
+    string identifier(get_ip_address(buf));
 
-    userIndex = get_user_index_by_ip(users, get_nickname(buf));;
+    printf("BIRLLLL %s\n", identifier.c_str());
+
+    userIndex = get_user_index_by_ip(users, identifier);;
+    printf("hmmmmm %d\n", userIndex);
     if(userIndex < 0) {
-        userIndex = get_user_index_by_nickname(users, get_nickname(buf));;
+        userIndex = get_user_index_by_nickname(users, identifier);
     }
+    printf("oooopa %d\n", userIndex);
 
     if(userIndex >= 0) {
         printf("BIRLLLL %d %s\n", userIndex, users.at(userIndex).iPAddress.c_str());

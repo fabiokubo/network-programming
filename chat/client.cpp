@@ -111,7 +111,7 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
         string user = get_user(&buf[2]);
         string path = get_message(&buf[2]);
         filePath = path;
-        printf("ueva %s ooooba %s\n", user.c_str(), filePath.c_str());
+        //printf("ueva %s ooooba %s\n", user.c_str(), filePath.c_str());
         send_transfer_message(sockfd, const_cast<char*>(user.c_str()), server_address, slen);
     }
     // Handle list users command
@@ -121,7 +121,7 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
     }
     // Handle exit command
     else if(strncmp(buf, "exit\n", BUFLEN) == 0){
-        send_exit_message(sockfd, server_address, slen, nickname); // <-----
+        send_exit_message(sockfd, server_address, slen, nickname); 
         close(sockfd);
         printf("Bye bye!\n");
         exit(EXIT_SUCCESS);

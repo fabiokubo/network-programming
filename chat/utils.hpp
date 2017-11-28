@@ -85,7 +85,7 @@ string get_user(char * buf){
     size_t spacePosition;
     string aux(buf);
     spacePosition = aux.find(" ");
-    return aux.substr(0, spacePosition - 1);
+    return aux.substr(0, spacePosition);
 }
 
 // Finds the message by parsing the buffer
