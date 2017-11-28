@@ -49,7 +49,7 @@ void die(string s){
 
 // Returns the index of user with given nickname
 int get_user_index_by_nickname(vector<User> users, string nickname) {
-    int i;
+    unsigned int i;
     for(i = 0; i < users.size(); i++) {
         if(users[i].nickname == nickname) {
             return i;
@@ -60,7 +60,7 @@ int get_user_index_by_nickname(vector<User> users, string nickname) {
 
 // Returns the index of user with given IP
 int get_user_index_by_ip(vector<User> users, string ip) {
-    int i;
+    unsigned int i;
     for(i = 0; i < users.size(); i++) {
         if(users[i].iPAddress == ip) {
             return i;

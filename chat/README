@@ -1,13 +1,15 @@
--> To compile:
+### To compile:
+```
 g++ server.cpp -o server -Wall
-g++ client.c -o client -Wall
-
+g++ client.cpp -pthread -o client -Wall
+```
 or
-
+```
 make server
 make client
-
--> To execute
-
+```
+### To execute
+```
 ./server <portNumber>
-./client <IPAddress> <PortNumber>
+./client <IPAddress> <portNumber>
+```

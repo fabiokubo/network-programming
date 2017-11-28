@@ -73,7 +73,7 @@ void send_message_to_user(int sockfd, const char * buf, int recv_len, struct soc
 
 // Creates a list with the registered users and send it to the solicitant user
 void send_users_list(int sockfd, struct sockaddr * peer_address, socklen_t slen){
-    int i, n;
+    unsigned int i, n;
     char message[BUFLEN], * aux;
     message[0] = TEXT_MESSAGE;
     n = sprintf(&message[1], "Connected Users:\n");
@@ -135,23 +135,17 @@ void handle_text_Message(int sockfd, struct sockaddr_in * sender_address, char *
 void provide_transfer_info(int sockfd, struct sockaddr_in * sender_address, char * buf){
     struct sockaddr_in address;
     socklen_t slen=sizeof(address);
-    char str[INET_ADDRSTRLEN], message[BUFLEN];
+    char message[BUFLEN];
     string message_content;
     int userIndex;
     string identifier(get_ip_address(buf));
 
-    printf("BIRLLLL %s\n", identifier.c_str());
-
     userIndex = get_user_index_by_ip(users, identifier);;
-    printf("hmmmmm %d\n", userIndex);
     if(userIndex < 0) {
         userIndex = get_user_index_by_nickname(users, identifier);
     }
-    printf("oooopa %d\n", userIndex);
 
     if(userIndex >= 0) {
-        printf("BIRLLLL %d %s\n", userIndex, users.at(userIndex).iPAddress.c_str());
-        //
         string text = get_message(buf);
         message[0] = TRANSFER_MESSAGE;
         message_content = users[userIndex].iPAddress + " " + std::to_string(users[userIndex].portNumberTCP);
@@ -211,7 +205,7 @@ int receive_message_from_user(int sockfd, char * buf, struct sockaddr * peer_add
 int main(int argc, char **argv){
     struct sockaddr_in server_address, peer_address;
     socklen_t slen;
-    int sockfd, recv_len;
+    int sockfd;
     char buf[BUFLEN];
 
     printf("Starting server...\n");
@@ -229,7 +223,7 @@ int main(int argc, char **argv){
         //try to receive some data, this is a blocking call
         slen = sizeof(peer_address);
         memset(buf,0,sizeof(buf)); // Buffer filled with zeroes
-        recv_len = receive_message_from_user(sockfd, buf, (struct sockaddr *) &peer_address, &slen);
+        receive_message_from_user(sockfd, buf, (struct sockaddr *) &peer_address, &slen);
 
         //print details of the client/peer and the data received
         //printf("Received packet from %s:%d\n", inet_ntoa(peer_address.sin_addr), ntohs(peer_address.sin_port));
