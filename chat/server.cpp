@@ -75,13 +75,16 @@ void send_message_to_user(int sockfd, const char * buf, int recv_len, struct soc
 void send_users_list(int sockfd, struct sockaddr * peer_address, socklen_t slen){
     int i, n;
     char message[BUFLEN], * aux;
-    n = sprintf(message, "Connected Users:\n");
-    aux = message + n;
+    message[0] = TEXT_MESSAGE;
+    n = sprintf(&message[1], "Connected Users:\n");
+    aux = &message[1] + n;
     for (i = 0; i < users.size(); i++) {
         n = sprintf(aux, "%d - %s\n", i, users[i].nickname.c_str());
         aux += n;
     }
+    printf("eeeeeeeee %s\n", message);
     send_message_to_user(sockfd, message, strlen(message), peer_address, slen);
+    printf("Sent\n");
 }
 
 // Creates a new user struct and populates it with received info
