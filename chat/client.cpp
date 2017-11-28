@@ -95,7 +95,6 @@ void print_instructions(){
     printf("- Command to send message: M <nickname> <message_content>\n");
     printf("- Command to send file: T <nickname> <file_name>\n");
     printf("- Command to list users: L\n");
-    printf("- Command to change nickname: N\n");
     printf("- Command to exit: exit\n");
     printf("\n> ");
 }
@@ -109,24 +108,16 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
     }
     // Handle file transfer command
     else if (buf[0] == 'T') {
-        string user = get_nickname(&buf[1]);
-        string path = get_message(&buf[1]);
+        string user = get_user(&buf[2]);
+        string path = get_message(&buf[2]);
         filePath = path;
-        printf("ueva %s\n", filePath.c_str());
+        printf("ueva %s ooooba %s\n", user.c_str(), filePath.c_str());
         send_transfer_message(sockfd, const_cast<char*>(user.c_str()), server_address, slen);
     }
     // Handle list users command
     else if(buf[0] == 'L') {
+        printf("\n");
         send_list_message(sockfd, server_address, slen);
-    }
-    // Handle user updating command
-    else if(buf[0] == 'N') {
-        char nickname[50], portNumberTCP[10];
-        printf("Enter your nickname: ");
-        fgets(nickname , 50 , stdin);
-        printf("Enter a port Number to TCP communication: ");
-        fgets(portNumberTCP , 10 , stdin);
-        send_register_message(sockfd, nickname, portNumberTCP, (struct sockaddr *) &server_address, slen);
     }
     // Handle exit command
     else if(strncmp(buf, "exit\n", BUFLEN) == 0){
@@ -160,13 +151,26 @@ void handle_response_type(char *buf){
     }
 }
 
+// Controls a thread responsible for checking any received messages
+void* response_loop(void *rd){
+    Response_Data *respData = (Response_Data *) rd;
+    char bufServer[BUFLEN];
+    socklen_t slen=sizeof(*(respData->server_address));
+    for(;;){
+        memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
+        receive_message_from_server(respData->sockfd, bufServer,
+            respData->server_address, &slen);
+        handle_response_type(bufServer);
+    }
+}
+
 int main(int argc, char **argv){
-    pid_t process_id;
+    pthread_t listener;
     struct sockaddr_in server_address;
     socklen_t slen=sizeof(server_address);
     int sockfd;
-    char bufServer[BUFLEN], bufUser[BUFLEN], nickname[50], portNumberTCP[10];
-    vector<User> users;
+    char bufUser[BUFLEN], nickname[50], portNumberTCP[10];
+    Response_Data respData;
 
     validate_parameters(argc, argv);
 
@@ -184,30 +188,28 @@ int main(int argc, char **argv){
     send_register_message(sockfd, nickname, portNumberTCP, (struct sockaddr *) &server_address, slen);
 
     //receive list of users
-    memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
-    receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-    printf("%s\n", &bufServer[1]);
+    memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
+    receive_message_from_server(sockfd, bufUser, (struct sockaddr *) &server_address, &slen);
+    printf("%s\n", &bufUser[1]);
     printf("Type your commands: \n> ");
-
     fflush(stdout);
-    process_id = fork();
 
-    if(process_id != 0) {//if is main fork
-        //listens to user's commands
-        for(;;){
-            memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
-            fgets(bufUser, BUFLEN, stdin);
-            handle_input(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
-        }
+    //populates response data
+    respData.sockfd = sockfd;
+    respData.server_address = (struct sockaddr *) &server_address;
+
+    if(pthread_create(&listener, NULL, response_loop, &respData)) {
+        die("Error creating thread\n");
     }
-    else{ //if is child fork
-        //listens to server
-        for(;;){
-            memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
-            receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-            handle_response_type(bufServer);
-        }
+
+    //main thread: wait for input
+    for(;;){
+        memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
+        fgets(bufUser, BUFLEN, stdin);
+        handle_input(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
     }
+
+
 
 
     return 0;

@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 #define BUFLEN 512  //Max length of buffer
 
@@ -25,6 +26,12 @@ typedef struct User {
   string iPAddress;
   string nickname;
 } User;
+
+typedef struct response {
+    int sockfd;
+    struct sockaddr *server_address;
+} Response_Data;
+
 
 // Message codes
 enum MESSAGE_TYPE {
@@ -73,6 +80,13 @@ string get_nickname(char * buf){
 // Finds the ip address by parsing the buffer
 string get_ip_address(char * buf){
     return get_nickname(buf);
+}
+// Finds the username by parsing the buffer
+string get_user(char * buf){
+    size_t spacePosition;
+    string aux(buf);
+    spacePosition = aux.find(" ");
+    return aux.substr(0, spacePosition - 1);
 }
 
 // Finds the message by parsing the buffer
