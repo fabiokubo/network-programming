@@ -96,7 +96,8 @@ void print_instructions(){
     printf("- Command to send file: T <nickname> <file_name>\n");
     printf("- Command to list users: L\n");
     printf("- Command to change nickname: N\n");
-    printf("- Command to exit: exit\n\n");
+    printf("- Command to exit: exit\n");
+    printf("\n> ");
 }
 
 // Switches between possible commands and execute them
@@ -104,6 +105,7 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
     // Handle message sending command
     if(buf[0] == 'M') {
         send_text_message(sockfd, &buf[2], server_address, slen);
+        printf("\n> ");
     }
     // Handle file transfer command
     else if (buf[0] == 'T') {
@@ -143,9 +145,9 @@ void handle_input(char buf[BUFLEN], int sockfd, struct sockaddr * server_address
 void handle_response_type(char *buf){
     // Handle message response
     if(buf[0] == TEXT_MESSAGE) {
-        printf("\rFrom server: %s\n", buf[1]);
+        printf("\rFrom server: %s", &buf[1]);
         fflush(stdout);
-        printf("> ");
+        printf("\n> ");
         fflush(stdout);
     }
     // Handle file transfer response
@@ -184,7 +186,7 @@ int main(int argc, char **argv){
     //receive list of users
     memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
     receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-    printf("%s\n", bufServer);
+    printf("%s\n", &bufServer[1]);
     printf("Type your commands: \n> ");
 
     fflush(stdout);
@@ -196,7 +198,6 @@ int main(int argc, char **argv){
             memset(bufUser,'\0', BUFLEN); // Fills buffer with '\0' char
             fgets(bufUser, BUFLEN, stdin);
             handle_input(bufUser, sockfd, (struct sockaddr *)&server_address, slen, nickname);
-            printf("\n> ");
         }
     }
     else{ //if is child fork
@@ -204,7 +205,6 @@ int main(int argc, char **argv){
         for(;;){
             memset(bufServer,'\0', BUFLEN); // Fills buffer with '\0' char
             receive_message_from_server(sockfd, bufServer, (struct sockaddr *) &server_address, &slen);
-            printf("OOOOOWWW CHEGOU\n");
             handle_response_type(bufServer);
         }
     }
